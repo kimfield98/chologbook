@@ -1,0 +1,47 @@
+import type { Log } from "./types";
+
+/** 로컬 타임존 기준으로 Date → YYYY-MM-DD */
+export function formatYmd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** YYYY-MM-DD → 로컬 자정 기준 Date */
+export function parseYmd(ymd: string): Date {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/**
+ * Streak: 가장 최근 기록일부터 하루씩 거슬러 올라가며
+ * 연속으로 Patch가 있는 날만 카운트
+ */
+export function computeStreak(dates: string[]): number {
+  const unique = [...new Set(dates)].filter(Boolean).sort();
+  if (unique.length === 0) return 0;
+
+  const daySet = new Set(unique);
+  const latest = unique[unique.length - 1]!;
+  let streak = 0;
+  const cursor = parseYmd(latest);
+
+  while (daySet.has(formatYmd(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return streak;
+}
+
+/** 로그를 날짜 기준 최신순(내림차순)으로 정렬 */
+export function sortLogsNewestFirst(logs: Log[]): Log[] {
+  return [...logs].sort((a, b) =>
+    a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
+  );
+}
+
+export function hasLogForDate(topicLogs: Log[], date: string): boolean {
+  return topicLogs.some((l) => l.date === date);
+}
