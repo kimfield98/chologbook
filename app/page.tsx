@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { TopicDetail } from "@/components/chologbook/TopicDetail";
 import { TopicList } from "@/components/chologbook/TopicList";
 import { TestPanel } from "@/components/chologbook/TestPanel";
+import { useAuth } from "@/hooks/useAuth";
 import { useLogs } from "@/hooks/useLogs";
 import { usePatch } from "@/hooks/usePatch";
 import { useTestMode } from "@/hooks/useTestMode";
@@ -16,8 +17,9 @@ import { debugLog } from "@/lib/debugLog";
  * 로그의 단일 소스는 `logs` 배열이며, Topic은 그룹(id/title)만 담당한다.
  */
 export default function Home() {
+  const authSession = useAuth();
   const topicsApi = useTopics();
-  const logsApi = useLogs();
+  const logsApi = useLogs({ userId: authSession.userId });
 
   const patch = usePatch({
     topics: topicsApi.topics,
@@ -49,6 +51,14 @@ export default function Home() {
   );
 
   const isHome = topicsApi.selectedTopicId === null;
+
+  if (authSession.isLoading) {
+    return (
+      <div className="relative flex min-h-full flex-1 flex-col items-center justify-center bg-zinc-50 px-4 py-12 text-zinc-900">
+        <p className="text-sm font-medium text-zinc-500">연결 중…</p>
+      </div>
+    );
+  }
 
   function handleOpenNewTopicPanel() {
     debugLog("Topic 버튼 클릭됨", "인라인 입력 패널 오픈");

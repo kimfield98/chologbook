@@ -26,10 +26,21 @@ export async function addLogToFirestore(log: Log): Promise<void> {
     throw new Error("Firestore가 초기화되지 않았습니다. .env.local을 확인하세요.");
   }
 
+  if (!log.userId?.trim()) {
+    throw new Error("userId 없이 Firestore에 저장할 수 없습니다.");
+  }
+
+  console.log("[firestoreLogs] addLogToFirestore userId 포함", {
+    userId: log.userId,
+    topicId: log.topicId,
+    id: log.id,
+  });
+
   try {
     const ref = doc(db, "logs", log.id);
     const payload = {
       id: log.id,
+      userId: log.userId,
       topicId: log.topicId,
       date: log.date,
       text: log.text,
@@ -42,18 +53,27 @@ export async function addLogToFirestore(log: Log): Promise<void> {
   }
 }
 
-/** 컬렉션 전체를 읽어 앱 `Log[]`로 변환 (createdAt 기준 정렬) */
-export async function getLogsFromFirestore(): Promise<Log[]> {
+/** 해당 사용자의 logs만 조회 (전체 컬렉션 스캔 금지) */
+export async function getLogsFromFirestore(userId: string): Promise<Log[]> {
   const db = ensureDb();
   if (!db) {
     return [];
   }
 
+  if (!userId.trim()) {
+    console.warn("[firestoreLogs] getLogsFromFirestore: userId 없음 — 빈 배열");
+    return [];
+  }
+
+  console.log("[firestoreLogs] getLogsFromFirestore 쿼리", { userId });
+
   try {
-    const snap = await getDocs(collection(db, "logs"));
+    const q = query(collection(db, "logs"), where("userId", "==", userId));
+    const snap = await getDocs(q);
     const rows = snap.docs.map((d) => {
       const data = d.data() as {
         id?: string;
+        userId?: string;
         topicId?: string;
         date?: string;
         text?: string;
@@ -61,6 +81,7 @@ export async function getLogsFromFirestore(): Promise<Log[]> {
       };
       return {
         id: typeof data.id === "string" ? data.id : d.id,
+        userId: String(data.userId ?? ""),
         topicId: String(data.topicId ?? ""),
         date: String(data.date ?? ""),
         text: String(data.text ?? ""),
@@ -76,8 +97,9 @@ export async function getLogsFromFirestore(): Promise<Log[]> {
       return a.id.localeCompare(b.id);
     });
 
-    return rows.map(({ id, topicId, date, text }) => ({
+    return rows.map(({ id, userId: uid, topicId, date, text }) => ({
       id,
+      userId: uid,
       topicId,
       date,
       text,
@@ -88,15 +110,26 @@ export async function getLogsFromFirestore(): Promise<Log[]> {
   }
 }
 
-/** topicId가 일치하는 문서를 모두 삭제 */
-export async function clearLogsByTopic(topicId: string): Promise<void> {
+/** userId + topicId가 일치하는 문서만 삭제 */
+export async function clearLogsByTopic(
+  userId: string,
+  topicId: string,
+): Promise<void> {
   const db = ensureDb();
   if (!db) {
     throw new Error("Firestore가 초기화되지 않았습니다. .env.local을 확인하세요.");
   }
 
+  if (!userId.trim()) {
+    throw new Error("userId 없이 Firestore 삭제를 실행할 수 없습니다.");
+  }
+
   try {
-    const q = query(collection(db, "logs"), where("topicId", "==", topicId));
+    const q = query(
+      collection(db, "logs"),
+      where("userId", "==", userId),
+      where("topicId", "==", topicId),
+    );
     const snap = await getDocs(q);
     await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
   } catch (e) {

@@ -10,6 +10,8 @@ type LegacyTopic = {
 
 export function migrateEmbeddedLogsToGlobal(
   legacyTopics: LegacyTopic[],
+  /** 레거시 embedded 로그에 붙일 userId (시드는 로그가 비어 있음) */
+  migratedUserId = "",
 ): { topics: Topic[]; logs: Log[] } {
   const topics: Topic[] = legacyTopics.map(({ id, title }) => ({ id, title }));
   const logs: Log[] = [];
@@ -17,6 +19,7 @@ export function migrateEmbeddedLogsToGlobal(
     for (const row of t.logs) {
       logs.push({
         id: newLogId(),
+        userId: migratedUserId,
         topicId: t.id,
         date: row.date,
         text: row.text,
