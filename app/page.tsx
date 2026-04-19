@@ -11,6 +11,7 @@ import { useTestMode } from "@/hooks/useTestMode";
 import { useTopics } from "@/hooks/useTopics";
 import { getFocusTopicId } from "@/lib/chologbook/getFocusTopicId";
 import { debugLog } from "@/lib/debugLog";
+import { isFirebaseConfigured } from "@/lib/firebase";
 
 /**
  * 페이지: Topic(useTopics) + 전역 Log(useLogs) + Patch·테스트 훅 조합.
@@ -78,8 +79,41 @@ export default function Home() {
     debugLog("Topic 생성됨", topic);
   }
 
+  const showAccountBar = isFirebaseConfigured();
+
   return (
     <div className="relative flex min-h-full flex-1 flex-col items-center justify-center bg-zinc-50 px-4 py-12 text-zinc-900">
+      {showAccountBar ? (
+        <div className="absolute right-4 top-4 flex max-w-[min(100%,20rem)] flex-col items-end gap-1 sm:right-6 sm:top-6">
+          {authSession.user && !authSession.isAnonymous ? (
+            <span
+              className="truncate text-right text-xs font-medium text-zinc-600"
+              title={authSession.user.email ?? authSession.userId}
+            >
+              {authSession.user.email ?? authSession.userId}
+            </span>
+          ) : (
+            <>
+              {authSession.user && authSession.isAnonymous ? (
+                <p className="max-w-[16rem] text-right text-sm leading-snug text-gray-500">
+                  Google로 로그인하면 기록이 계정 기준으로 새롭게 저장됩니다.
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => void authSession.signInWithGoogle()}
+                disabled={authSession.isGooglePopupPending}
+                className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {authSession.isGooglePopupPending
+                  ? "Google 연결 중…"
+                  : "Google로 로그인"}
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
+
       <main className="w-full max-w-md">
         {isHome ? (
           <section className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm ring-1 ring-zinc-100">
