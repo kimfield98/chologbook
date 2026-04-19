@@ -70,6 +70,16 @@ export default function Home() {
   ]);
   /** null이면 홈, 값이면 해당 Topic 상세 */
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  /**
+   * UX 의도: "지금 내가 쌓고 있는 흐름은 이 Topic이다"를 홈에서도 이어서 보여 줌.
+   * - 상세 화면으로 들어갈 때마다 갱신한다 (리스트 클릭 시 setLastFocusTopicId).
+   * - 홈으로 나오면 selectedTopicId는 null이 되므로, 집중 표시만으로는 부족하다.
+   *   그래서 마지막으로 연 상세 Topic id를 따로 기억해, 홈 리스트에서 🌱·강조 스타일에 쓴다.
+   * - 초기값 "1": 기본 Topic 하나만 있을 때도 첫 화면에서 집중 맥락이 끊기지 않게 함.
+   */
+  const [lastFocusTopicId, setLastFocusTopicId] = useState<string | null>(
+    "1",
+  );
 
   /** 테스트 UI·동작 게이트 */
   const [isTestMode, setIsTestMode] = useState(true);
@@ -273,6 +283,8 @@ export default function Home() {
       logs: [],
     };
     setTopics((prev) => [...prev, newTopic]);
+    // 새로 만든 Topic을 곧바로 "집중 흐름"으로 인식하도록 집중 id도 맞춤
+    setLastFocusTopicId(newTopic.id);
     setNewTopicName("");
     setNewTopicOpen(false);
     console.log("Topic 생성됨:", newTopic);
@@ -282,6 +294,12 @@ export default function Home() {
   const showMinorHint = logs.length >= 3;
 
   const isHome = selectedTopicId === null;
+  /**
+   * 홈 리스트에서 "🌱 현재 집중"·emerald 강조에 쓰는 id.
+   * - 상세에 있을 때: selectedTopicId가 곧 집중 Topic (네비게이션 상태와 일치).
+   * - 홈에 있을 때: null이므로 lastFocusTopicId로 "방금까지 들여다보던 흐름"을 유지.
+   */
+  const focusVisualId = selectedTopicId ?? lastFocusTopicId ?? undefined;
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col items-center justify-center bg-zinc-50 px-4 py-12 text-zinc-900">
@@ -307,6 +325,10 @@ export default function Home() {
 
             {newTopicOpen ? (
               <div className="mt-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50/80 p-3">
+                {/* Topic 추가 = 기능이 아니라 "새 루틴/흐름을 시작한다"는 의도를 짧게 전달 */}
+                <p className="text-xs text-zinc-500">
+                  반복하고 싶은 습관이나 기록을 하나 만들어보세요
+                </p>
                 <label className="block text-xs font-medium text-zinc-600">
                   새 Topic 이름
                 </label>
@@ -351,16 +373,33 @@ export default function Home() {
               {topics.map((topic) => {
                 const s = computeStreak(topic.logs.map((l) => l.date));
                 const lastLog = topic.logs[topic.logs.length - 1];
+                // 여러 Topic 중에서도 "지금 이 흐름에 집중 중"인 한 줄을 시각·카피로 고정
+                const isCurrentFocus =
+                  focusVisualId !== undefined && topic.id === focusVisualId;
                 return (
                   <li key={topic.id}>
                     <button
                       type="button"
-                      onClick={() => setSelectedTopicId(topic.id)}
-                      className="flex w-full flex-col items-stretch gap-1 rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-left text-sm transition hover:border-emerald-200 hover:bg-emerald-50/30"
+                      onClick={() => {
+                        // 집중 id를 상세 진입과 동시에 맞춤 → 홈으로 돌아와도 같은 카드가 🌱 유지
+                        setLastFocusTopicId(topic.id);
+                        setSelectedTopicId(topic.id);
+                      }}
+                      className={`flex w-full flex-col items-stretch gap-1 rounded-xl px-4 py-3 text-left text-sm transition ${
+                        isCurrentFocus
+                          ? // emerald: 목록 속에서도 "내가 쌓는 주된 루틴"이 한눈에 들어오게
+                            "border border-emerald-300 bg-emerald-50/70 ring-1 ring-emerald-100 hover:border-emerald-400 hover:bg-emerald-50"
+                          : "border border-zinc-200 bg-zinc-50/50 hover:border-emerald-200 hover:bg-emerald-50/30"
+                      }`}
                     >
                       <span className="truncate font-medium text-zinc-900">
                         {topic.title}
                       </span>
+                      {isCurrentFocus ? (
+                        <p className="text-xs font-medium text-emerald-700">
+                          🌱 현재 집중
+                        </p>
+                      ) : null}
                       <span className="text-xs text-zinc-600">
                         🔥 {s}일 유지 중 · 🧺 {topic.logs.length}개 쌓임
                       </span>
