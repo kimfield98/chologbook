@@ -14,7 +14,7 @@
 
 ---
 
-**더 자세한 이야기가 궁금하다면👉🏻** [링크]([https://wise-tumbleweed-aa3.notion.site/CHOLOGBOOK-33d672f9fc07802d9040cadcf37c9d44?pvs=74](https://wise-tumbleweed-aa3.notion.site/CHOLOGBOOK-33d672f9fc07802d9040cadcf37c9d44?pvs=74))
+**더 자세한 이야기가 궁금하다면👉🏻** [초록북 Notion](https://wise-tumbleweed-aa3.notion.site/CHOLOGBOOK-33d672f9fc07802d9040cadcf37c9d44?pvs=74](https://wise-tumbleweed-aa3.notion.site/CHOLOGBOOK-33d672f9fc07802d9040cadcf37c9d44?pvs=74)
 
 
 ---
