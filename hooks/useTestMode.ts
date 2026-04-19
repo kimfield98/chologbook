@@ -94,8 +94,23 @@ export function useTestMode({
   }, [selectedTopicId, clearLogsForTopic]);
 
   const testAddTodayLog = useCallback(() => {
-    if (!selectedTopicId || !selectedTopic || !todayKey) return;
-    if (hasLogForDate(topicLogs, todayKey)) return;
+    console.log("[testAddTodayLog] 실행됨", {
+      selectedTopicId,
+      hasTopic: !!selectedTopic,
+      todayKey,
+    });
+    if (!selectedTopicId || !selectedTopic || !todayKey) {
+      console.log("[testAddTodayLog] 조기 종료", {
+        selectedTopicId,
+        hasTopic: !!selectedTopic,
+        todayKey,
+      });
+      return;
+    }
+    if (hasLogForDate(topicLogs, todayKey)) {
+      console.log("[testAddTodayLog] 조기 종료: 오늘 이미 있음");
+      return;
+    }
     addLog(selectedTopicId, {
       date: todayKey,
       text: selectedTopic.title,

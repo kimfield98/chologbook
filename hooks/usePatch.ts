@@ -93,15 +93,38 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     }, 1800);
   }, []);
 
-  const handlePatch = useCallback(() => {
-    if (!selectedTopicId || !selectedTopic || patchDisabled) return;
-    if (hasLogForDate(topicLogs, todayKey)) return;
+  const handlePatch = useCallback(async () => {
+    console.log("[handlePatch] 실행됨", {
+      patchDisabled,
+      selectedTopicId,
+      todayKey,
+      topicLogsLen: topicLogs.length,
+    });
+
+    if (!selectedTopicId || !selectedTopic || patchDisabled) {
+      console.log("[handlePatch] 조기 종료", {
+        reason: !selectedTopicId
+          ? "no selectedTopicId"
+          : !selectedTopic
+            ? "no selectedTopic"
+            : "patchDisabled",
+        patchDisabled,
+        todayKey,
+      });
+      return;
+    }
+    if (hasLogForDate(topicLogs, todayKey)) {
+      console.log("[handlePatch] 조기 종료: 이미 해당 날짜 로그 있음", {
+        todayKey,
+      });
+      return;
+    }
     const entry: LogInput = { date: todayKey, text: selectedTopic.title };
     const nextStreak = computeStreak([
       ...topicLogs.map((l) => l.date),
       entry.date,
     ]);
-    addLog(selectedTopicId, entry);
+    await addLog(selectedTopicId, entry);
     setEditPatchOpen(false);
     showPatchSuccessFeedback(nextStreak);
     debugLog("patch:quick", { topicId: selectedTopicId, entry, nextStreak });
@@ -115,16 +138,27 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     showPatchSuccessFeedback,
   ]);
 
-  const handleSaveEditPatch = useCallback(() => {
-    if (!selectedTopicId || !selectedTopic || patchDisabled) return;
-    if (hasLogForDate(topicLogs, todayKey)) return;
+  const handleSaveEditPatch = useCallback(async () => {
+    console.log("[handleSaveEditPatch] 실행됨", {
+      patchDisabled,
+      selectedTopicId,
+      todayKey,
+    });
+    if (!selectedTopicId || !selectedTopic || patchDisabled) {
+      console.log("[handleSaveEditPatch] 조기 종료", { patchDisabled });
+      return;
+    }
+    if (hasLogForDate(topicLogs, todayKey)) {
+      console.log("[handleSaveEditPatch] 조기 종료: 중복 날짜");
+      return;
+    }
     const text = editPatchText.trim() || selectedTopic.title;
     const entry: LogInput = { date: todayKey, text };
     const nextStreak = computeStreak([
       ...topicLogs.map((l) => l.date),
       entry.date,
     ]);
-    addLog(selectedTopicId, entry);
+    await addLog(selectedTopicId, entry);
     setEditPatchOpen(false);
     showPatchSuccessFeedback(nextStreak);
     debugLog("patch:edit", { topicId: selectedTopicId, entry, nextStreak });
