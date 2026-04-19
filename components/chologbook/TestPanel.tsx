@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { hasLogForDate } from "@/lib/chologbook/date-logic";
-import type { Topic } from "@/lib/chologbook/types";
+import type { Log, Topic } from "@/lib/chologbook/types";
 
 export type TestPanelProps = {
   isTestMode: boolean;
@@ -11,6 +11,8 @@ export type TestPanelProps = {
   setTestPanelOpen: Dispatch<SetStateAction<boolean>>;
   selectedTopicId: string | null;
   selectedTopic: Topic | undefined;
+  /** 선택 Topic에 한정된 로그 (전역에서 필터된 것) */
+  topicLogs: Log[];
   todayKey: string;
   onTestAddToday: () => void;
   onTestAddPastDay: () => void;
@@ -25,6 +27,7 @@ export function TestPanel({
   setTestPanelOpen,
   selectedTopicId,
   selectedTopic,
+  topicLogs,
   todayKey,
   onTestAddToday,
   onTestAddPastDay,
@@ -34,7 +37,7 @@ export function TestPanel({
   const todayBlocked =
     selectedTopic != null &&
     todayKey !== "" &&
-    hasLogForDate(selectedTopic.logs, todayKey);
+    hasLogForDate(topicLogs, todayKey);
 
   if (!isTestMode) {
     return (

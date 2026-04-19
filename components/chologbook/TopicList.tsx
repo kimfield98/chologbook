@@ -1,16 +1,18 @@
 "use client";
 
-import type { Topic } from "@/lib/chologbook/types";
+import type { Log, Topic } from "@/lib/chologbook/types";
 import { TopicCard } from "@/components/chologbook/TopicCard";
 
 type TopicListProps = {
   topics: Topic[];
+  allLogs: Log[];
   focusVisualId: string | undefined;
   onSelectTopic: (id: string) => void;
 };
 
 export function TopicList({
   topics,
+  allLogs,
   focusVisualId,
   onSelectTopic,
 }: TopicListProps) {
@@ -20,6 +22,7 @@ export function TopicList({
         <TopicCard
           key={topic.id}
           topic={topic}
+          allLogs={allLogs}
           focusVisualId={focusVisualId}
           onSelect={onSelectTopic}
         />

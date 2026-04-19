@@ -1,12 +1,13 @@
-/** Patch 한 건 (날짜 + 사용자 표현 텍스트) */
-export type Log = {
-  date: string;
-  text: string;
-};
-
-/** 하나의 Topic (바구니) */
+/** Topic = 그룹/카테고리 (로그는 전역 `logs`에서 topicId로 연결) */
 export type Topic = {
   id: string;
   title: string;
-  logs: Log[];
+};
+
+/** 전역 리스트의 한 건 */
+export type Log = {
+  id: string;
+  topicId: string;
+  date: string;
+  text: string;
 };

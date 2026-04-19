@@ -1,25 +1,39 @@
 "use client";
 
 import { useMemo } from "react";
-import { computeStreak } from "@/lib/chologbook/date-logic";
-import type { Topic } from "@/lib/chologbook/types";
+import { computeStreak, sortLogsNewestFirst } from "@/lib/chologbook/date-logic";
+import { getLogsByTopic } from "@/lib/chologbook/logs";
+import type { Log, Topic } from "@/lib/chologbook/types";
 
 type TopicCardProps = {
   topic: Topic;
+  /** 전역 logs — 카드에서 topicId로만 필터 */
+  allLogs: Log[];
   focusVisualId: string | undefined;
   onSelect: (id: string) => void;
 };
 
 export function TopicCard({
   topic,
+  allLogs,
   focusVisualId,
   onSelect,
 }: TopicCardProps) {
-  const streak = useMemo(
-    () => computeStreak(topic.logs.map((l) => l.date)),
-    [topic.logs],
+  const topicLogs = useMemo(
+    () => getLogsByTopic(allLogs, topic.id),
+    [allLogs, topic.id],
   );
-  const lastLog = topic.logs[topic.logs.length - 1];
+
+  const streak = useMemo(
+    () => computeStreak(topicLogs.map((l) => l.date)),
+    [topicLogs],
+  );
+
+  const previewLog = useMemo(
+    () => sortLogsNewestFirst(topicLogs)[0],
+    [topicLogs],
+  );
+
   const isCurrentFocus =
     focusVisualId !== undefined && topic.id === focusVisualId;
 
@@ -39,10 +53,10 @@ export function TopicCard({
           <p className="text-xs font-medium text-emerald-700">🌱 현재 집중</p>
         ) : null}
         <span className="text-xs text-zinc-600">
-          🔥 {streak}일 유지 중 · 🧺 {topic.logs.length}개 쌓임
+          🔥 {streak}일 유지 중 · 🧺 {topicLogs.length}개 쌓임
         </span>
-        {topic.logs.length > 0 && lastLog ? (
-          <span className="truncate text-xs text-zinc-500">→ {lastLog.text}</span>
+        {previewLog ? (
+          <span className="truncate text-xs text-zinc-500">→ {previewLog.text}</span>
         ) : null}
       </button>
     </li>

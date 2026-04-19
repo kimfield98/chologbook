@@ -169,7 +169,7 @@ export function TopicDetail({
           ) : (
             sortedLogs.map((log) => (
               <li
-                key={`${log.date}-${log.text}`}
+                key={log.id}
                 className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 rounded-lg border border-zinc-100 bg-zinc-50/50 px-3 py-2 text-zinc-800"
               >
                 <span className="min-w-0 flex-1 break-words">

@@ -7,23 +7,20 @@ import {
   hasLogForDate,
   sortLogsNewestFirst,
 } from "@/lib/chologbook/date-logic";
+import { getLogsByTopic } from "@/lib/chologbook/logs";
+import type { LogInput, LogsApi } from "@/hooks/useLogs";
 import type { TopicsApi } from "@/hooks/useTopics";
+import type { Topic } from "@/lib/chologbook/types";
 import { debugLog } from "@/lib/debugLog";
 
-type TopicsInput = Pick<
-  TopicsApi,
-  | "topics"
-  | "selectedTopicId"
-  | "addLog"
->;
+type PatchInput = Pick<TopicsApi, "topics" | "selectedTopicId"> &
+  Pick<LogsApi, "logs" | "addLog">;
 
 /**
- * Patch 계층: 오늘 키·피드백·수정 입력 UI + 로그 추가 진입점
- * topics 원본은 useTopics가 소유; 여기서는 파생값·이벤트만 다룬다.
+ * Patch UI·오늘 키·피드백.
+ * 선택 Topic의 로그는 전역 `logs`에서 topicId로 필터한 파생값만 사용한다.
  */
-export function usePatch(topicsApi: TopicsInput) {
-  const { topics, selectedTopicId, addLog } = topicsApi;
-
+export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) {
   const [todayKey, setTodayKey] = useState("");
   useEffect(() => {
     queueMicrotask(() => {
@@ -36,31 +33,31 @@ export function usePatch(topicsApi: TopicsInput) {
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const feedbackClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const selectedTopic = useMemo(
-    () =>
-      selectedTopicId === null
-        ? undefined
-        : topics.find((t) => t.id === selectedTopicId),
-    [topics, selectedTopicId],
-  );
+  const selectedTopic = useMemo((): Topic | undefined => {
+    if (selectedTopicId === null) return undefined;
+    return topics.find((t) => t.id === selectedTopicId);
+  }, [topics, selectedTopicId]);
 
-  const logs = useMemo(
-    () => selectedTopic?.logs ?? [],
-    [selectedTopic?.logs],
-  );
+  const topicLogs = useMemo(() => {
+    if (!selectedTopicId) return [];
+    return getLogsByTopic(logs, selectedTopicId);
+  }, [logs, selectedTopicId]);
 
   const streak = useMemo(
-    () => computeStreak(logs.map((l) => l.date)),
-    [logs],
+    () => computeStreak(topicLogs.map((l) => l.date)),
+    [topicLogs],
   );
 
-  const sortedLogs = useMemo(() => sortLogsNewestFirst(logs), [logs]);
+  const sortedLogs = useMemo(
+    () => sortLogsNewestFirst(topicLogs),
+    [topicLogs],
+  );
 
-  const showMinorHint = logs.length >= 3;
+  const showMinorHint = topicLogs.length >= 3;
 
   const alreadyPatchedToday = useMemo(
-    () => todayKey !== "" && hasLogForDate(logs, todayKey),
-    [todayKey, logs],
+    () => todayKey !== "" && hasLogForDate(topicLogs, todayKey),
+    [todayKey, topicLogs],
   );
 
   const patchDisabled = useMemo(
@@ -98,11 +95,12 @@ export function usePatch(topicsApi: TopicsInput) {
 
   const handlePatch = useCallback(() => {
     if (!selectedTopicId || !selectedTopic || patchDisabled) return;
-    if (hasLogForDate(logs, todayKey)) return;
-    const entry = { date: todayKey, text: selectedTopic.title };
-    const nextStreak = computeStreak(
-      [...logs, entry].map((l) => l.date),
-    );
+    if (hasLogForDate(topicLogs, todayKey)) return;
+    const entry: LogInput = { date: todayKey, text: selectedTopic.title };
+    const nextStreak = computeStreak([
+      ...topicLogs.map((l) => l.date),
+      entry.date,
+    ]);
     addLog(selectedTopicId, entry);
     setEditPatchOpen(false);
     showPatchSuccessFeedback(nextStreak);
@@ -111,7 +109,7 @@ export function usePatch(topicsApi: TopicsInput) {
     selectedTopicId,
     selectedTopic,
     patchDisabled,
-    logs,
+    topicLogs,
     todayKey,
     addLog,
     showPatchSuccessFeedback,
@@ -119,12 +117,13 @@ export function usePatch(topicsApi: TopicsInput) {
 
   const handleSaveEditPatch = useCallback(() => {
     if (!selectedTopicId || !selectedTopic || patchDisabled) return;
-    if (hasLogForDate(logs, todayKey)) return;
+    if (hasLogForDate(topicLogs, todayKey)) return;
     const text = editPatchText.trim() || selectedTopic.title;
-    const entry = { date: todayKey, text };
-    const nextStreak = computeStreak(
-      [...logs, entry].map((l) => l.date),
-    );
+    const entry: LogInput = { date: todayKey, text };
+    const nextStreak = computeStreak([
+      ...topicLogs.map((l) => l.date),
+      entry.date,
+    ]);
     addLog(selectedTopicId, entry);
     setEditPatchOpen(false);
     showPatchSuccessFeedback(nextStreak);
@@ -133,7 +132,7 @@ export function usePatch(topicsApi: TopicsInput) {
     selectedTopicId,
     selectedTopic,
     patchDisabled,
-    logs,
+    topicLogs,
     todayKey,
     editPatchText,
     addLog,
@@ -142,15 +141,16 @@ export function usePatch(topicsApi: TopicsInput) {
 
   const openEditPatch = useCallback(() => {
     if (!selectedTopic) return;
-    const lastLog = logs[logs.length - 1];
-    setEditPatchText(lastLog?.text || selectedTopic.title);
+    const newest = sortLogsNewestFirst(topicLogs)[0];
+    setEditPatchText(newest?.text || selectedTopic.title);
     setEditPatchOpen(true);
-  }, [selectedTopic, logs]);
+  }, [selectedTopic, topicLogs]);
 
   return {
     todayKey,
     selectedTopic,
-    logs,
+    /** 선택 Topic에 한정된 로그 (상세·Patch용 파생) */
+    logs: topicLogs,
     streak,
     sortedLogs,
     showMinorHint,

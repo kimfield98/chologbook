@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { TopicDetail } from "@/components/chologbook/TopicDetail";
 import { TopicList } from "@/components/chologbook/TopicList";
 import { TestPanel } from "@/components/chologbook/TestPanel";
+import { useLogs } from "@/hooks/useLogs";
 import { usePatch } from "@/hooks/usePatch";
 import { useTestMode } from "@/hooks/useTestMode";
 import { useTopics } from "@/hooks/useTopics";
@@ -11,23 +12,30 @@ import { getFocusTopicId } from "@/lib/chologbook/getFocusTopicId";
 import { debugLog } from "@/lib/debugLog";
 
 /**
- * 페이지: 훅(데이터 / Patch / 테스트) + 프레젠테이션 컴포넌트만 조합.
- * — topics·네비·집중 id → useTopics
- * — 오늘·피드백·수정 Patch UI → usePatch
- * — 테스트 패널·주입 액션 → useTestMode
+ * 페이지: Topic(useTopics) + 전역 Log(useLogs) + Patch·테스트 훅 조합.
+ * 로그의 단일 소스는 `logs` 배열이며, Topic은 그룹(id/title)만 담당한다.
  */
 export default function Home() {
   const topicsApi = useTopics();
-  const patch = usePatch(topicsApi);
+  const logsApi = useLogs();
+
+  const patch = usePatch({
+    topics: topicsApi.topics,
+    selectedTopicId: topicsApi.selectedTopicId,
+    logs: logsApi.logs,
+    addLog: logsApi.addLog,
+  });
+
   const test = useTestMode({
     topics: topicsApi.topics,
     selectedTopicId: topicsApi.selectedTopicId,
+    logs: logsApi.logs,
     todayKey: patch.todayKey,
-    addLog: topicsApi.addLog,
-    setTopicLogs: topicsApi.setTopicLogs,
+    addLog: logsApi.addLog,
+    clearLogsForTopic: logsApi.clearLogsForTopic,
+    replaceLogsForTopic: logsApi.replaceLogsForTopic,
   });
 
-  /** 홈 전용: 새 Topic 인라인 폼 (데이터 훅과 분리) */
   const [newTopicOpen, setNewTopicOpen] = useState(false);
   const [newTopicName, setNewTopicName] = useState("");
 
@@ -129,6 +137,7 @@ export default function Home() {
 
             <TopicList
               topics={topicsApi.topics}
+              allLogs={logsApi.logs}
               focusVisualId={focusVisualId}
               onSelectTopic={topicsApi.selectTopic}
             />
@@ -163,6 +172,7 @@ export default function Home() {
         setTestPanelOpen={test.setTestPanelOpen}
         selectedTopicId={topicsApi.selectedTopicId}
         selectedTopic={test.selectedTopic}
+        topicLogs={test.topicLogs}
         todayKey={patch.todayKey}
         onTestAddToday={test.testAddTodayLog}
         onTestAddPastDay={test.testAddPastDay}
