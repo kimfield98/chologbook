@@ -76,6 +76,10 @@ export default function Home() {
   /** 우측 하단 테스트 패널 열림 */
   const [testPanelOpen, setTestPanelOpen] = useState(false);
 
+  /** 홈: 새 Topic 인라인 입력 */
+  const [newTopicOpen, setNewTopicOpen] = useState(false);
+  const [newTopicName, setNewTopicName] = useState("");
+
   /** "✍️ 수정해서 기록" 편집 영역 표시 여부 */
   const [editPatchOpen, setEditPatchOpen] = useState(false);
   /** 수정 Patch 입력 초안 */
@@ -232,6 +236,48 @@ export default function Home() {
     updateTopicLogs(selectedTopicId, []);
   }
 
+  /** [오늘 기록 추가] 테스트용 오늘 1건 (중복 날짜 불가) */
+  function testAddTodayLog() {
+    if (!selectedTopicId || !selectedTopic || !todayKey) return;
+    if (hasLogForDate(selectedTopic.logs, todayKey)) return;
+    const nextLogs = [
+      ...selectedTopic.logs,
+      { date: todayKey, text: selectedTopic.title },
+    ];
+    updateTopicLogs(selectedTopicId, nextLogs);
+  }
+
+  /** "+ Topic 추가" — 입력 패널만 연다 (prompt 미사용) */
+  function handleOpenNewTopicPanel() {
+    console.log("Topic 버튼 클릭됨");
+    console.log(
+      "[케이스 2 대체] prompt 없음 — 인라인 입력 영역을 연다",
+    );
+    setNewTopicName("");
+    setNewTopicOpen(true);
+  }
+
+  /** 인라인 입력에서 Topic 생성 */
+  function handleCreateNewTopic() {
+    console.log("Topic 추가 확인(저장 버튼 또는 Enter)");
+    console.log("입력값(raw, trim 전):", newTopicName);
+    if (!newTopicName.trim()) {
+      console.log(
+        "[케이스 3] 이름이 비어 있거나 공백만 있음 — Topic 미생성",
+      );
+      return;
+    }
+    const newTopic: Topic = {
+      id: Date.now().toString(),
+      title: newTopicName.trim(),
+      logs: [],
+    };
+    setTopics((prev) => [...prev, newTopic]);
+    setNewTopicName("");
+    setNewTopicOpen(false);
+    console.log("Topic 생성됨:", newTopic);
+  }
+
   const sortedLogs = sortLogsNewestFirst(logs);
   const showMinorHint = logs.length >= 3;
 
@@ -250,33 +296,79 @@ export default function Home() {
             </h1>
             <button
               type="button"
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 px-4 py-3 text-sm font-medium text-emerald-800"
+              onClick={() => {
+                console.log("[케이스 1 확인] 버튼 클릭됨");
+                handleOpenNewTopicPanel();
+              }}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 px-4 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50"
             >
               + Topic 추가
             </button>
+
+            {newTopicOpen ? (
+              <div className="mt-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50/80 p-3">
+                <label className="block text-xs font-medium text-zinc-600">
+                  새 Topic 이름
+                </label>
+                <input
+                  type="text"
+                  value={newTopicName}
+                  onChange={(e) => setNewTopicName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateNewTopic();
+                    }
+                  }}
+                  placeholder="예: 영어 회화"
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:border-emerald-400 focus:ring-2"
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log("Topic 추가 취소 — 패널 닫음");
+                      setNewTopicName("");
+                      setNewTopicOpen(false);
+                    }}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateNewTopic}
+                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  >
+                    추가
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <ul className="mt-4 space-y-2">
               {topics.map((topic) => {
                 const s = computeStreak(topic.logs.map((l) => l.date));
+                const lastLog = topic.logs[topic.logs.length - 1];
                 return (
                   <li key={topic.id}>
                     <button
                       type="button"
                       onClick={() => setSelectedTopicId(topic.id)}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-left text-sm transition hover:border-emerald-200 hover:bg-emerald-50/30"
+                      className="flex w-full flex-col items-stretch gap-1 rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-left text-sm transition hover:border-emerald-200 hover:bg-emerald-50/30"
                     >
-                      <span className="min-w-0 flex-1 truncate font-medium text-zinc-900">
+                      <span className="truncate font-medium text-zinc-900">
                         {topic.title}
                       </span>
-                      <span className="flex shrink-0 items-center gap-3 text-xs text-zinc-600">
-                        <span title="연속 기록">
-                          <span aria-hidden>🔥</span>
-                          {s}
-                        </span>
-                        <span title="Patch 개수">
-                          <span aria-hidden>🧺</span>
-                          {topic.logs.length}
-                        </span>
+                      <span className="text-xs text-zinc-600">
+                        🔥 {s}일 유지 중 · 🧺 {topic.logs.length}개 쌓임
                       </span>
+                      {topic.logs.length > 0 && lastLog ? (
+                        <span className="truncate text-xs text-zinc-500">
+                          → {lastLog.text}
+                        </span>
+                      ) : null}
                     </button>
                   </li>
                 );
@@ -454,6 +546,19 @@ export default function Home() {
                 </p>
               ) : null}
               <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={
+                    !selectedTopicId ||
+                    !todayKey ||
+                    (selectedTopic != null &&
+                      hasLogForDate(selectedTopic.logs, todayKey))
+                  }
+                  onClick={testAddTodayLog}
+                  className="rounded-lg bg-zinc-100 px-3 py-2 text-left font-medium text-zinc-800 enabled:hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  오늘 기록 추가
+                </button>
                 <button
                   type="button"
                   disabled={!selectedTopicId}
