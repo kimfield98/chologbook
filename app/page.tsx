@@ -19,8 +19,11 @@ import { isFirebaseConfigured } from "@/lib/firebase";
  */
 export default function Home() {
   const authSession = useAuth();
-  const topicsApi = useTopics();
   const logsApi = useLogs({ userId: authSession.userId });
+  const topicsApi = useTopics({
+    userId: authSession.userId,
+    logs: logsApi.logs,
+  });
 
   const patch = usePatch({
     topics: topicsApi.topics,
