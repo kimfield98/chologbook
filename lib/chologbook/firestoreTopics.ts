@@ -3,10 +3,8 @@ import {
   collection,
   doc,
   getDocs,
-  query,
   serverTimestamp,
   setDoc,
-  where,
 } from "firebase/firestore";
 import { initFirebase, db as firestoreDb } from "@/lib/firebase";
 import type { Topic } from "@/lib/chologbook/types";
@@ -16,6 +14,11 @@ function ensureDb() {
   return d;
 }
 
+/** `logs`와 동일한 uid 기준으로, 토픽은 사용자 하위 경로에만 둔다(규칙을 `users/{userId}/...` 한 블록으로 묶기 쉬움). */
+function topicsCollectionRef(db: NonNullable<ReturnType<typeof ensureDb>>, userId: string) {
+  return collection(db, "users", userId, "topics");
+}
+
 export async function getTopicsFromFirestore(userId: string): Promise<Topic[]> {
   const db = ensureDb();
   if (!db || !userId.trim()) {
@@ -23,8 +26,7 @@ export async function getTopicsFromFirestore(userId: string): Promise<Topic[]> {
   }
 
   try {
-    const q = query(collection(db, "topics"), where("userId", "==", userId));
-    const snap = await getDocs(q);
+    const snap = await getDocs(topicsCollectionRef(db, userId));
     const rows: Topic[] = snap.docs.map((d) => {
       const data = d.data() as { id?: string; title?: string };
       return {
@@ -37,7 +39,7 @@ export async function getTopicsFromFirestore(userId: string): Promise<Topic[]> {
   } catch (e) {
     if (e instanceof FirebaseError && e.code === "permission-denied") {
       console.warn(
-        "[firestoreTopics] topics 컬렉션 읽기가 규칙에 막혔습니다. Firebase Console → Firestore → 규칙에서 본인 userId 기준 읽기를 허용해 주세요. (지금은 로그에서 토픽만 복구된 상태로 동작합니다.)",
+        "[firestoreTopics] users/{uid}/topics 읽기가 규칙에 막혔습니다. 규칙 예: match /users/{userId}/topics/{topicId} { allow read, write: if request.auth != null && request.auth.uid == userId; }",
       );
       return [];
     }
@@ -62,7 +64,7 @@ export async function addTopicToFirestore(
   }
 
   try {
-    const ref = doc(db, "topics", topic.id);
+    const ref = doc(db, "users", userId, "topics", topic.id);
     await setDoc(ref, {
       id: topic.id,
       userId,
@@ -72,7 +74,7 @@ export async function addTopicToFirestore(
   } catch (e) {
     if (e instanceof FirebaseError && e.code === "permission-denied") {
       console.warn(
-        "[firestoreTopics] topics 쓰기가 규칙에 막혔습니다. Firestore 규칙에 topics 생성·수정을 추가해 주세요.",
+        "[firestoreTopics] users/{uid}/topics 쓰기가 규칙에 막혔습니다. 위와 동일 블록에서 write를 허용해 주세요.",
       );
     } else {
       console.error("[firestoreTopics] addTopicToFirestore failed", e);
