@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TopicDetail } from "@/components/chologbook/TopicDetail";
 import { TopicList } from "@/components/chologbook/TopicList";
 import { TestPanel } from "@/components/chologbook/TestPanel";
@@ -12,6 +12,8 @@ import { useTopics } from "@/hooks/useTopics";
 import { getFocusTopicId } from "@/lib/chologbook/getFocusTopicId";
 import { debugLog } from "@/lib/debugLog";
 import { isFirebaseConfigured } from "@/lib/firebase";
+
+const INSTALL_GUIDE_DISMISSED_KEY = "chologbook.installGuideDismissed";
 
 /**
  * 페이지: Topic(useTopics) + 전역 Log(useLogs) + Patch·테스트 훅 조합.
@@ -44,6 +46,8 @@ export default function Home() {
 
   const [newTopicOpen, setNewTopicOpen] = useState(false);
   const [newTopicName, setNewTopicName] = useState("");
+  const [installGuideOpen, setInstallGuideOpen] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   const focusVisualId = useMemo(
     () =>
@@ -55,6 +59,12 @@ export default function Home() {
   );
 
   const isHome = topicsApi.selectedTopicId === null;
+
+  useEffect(() => {
+    const dismissed =
+      window.localStorage.getItem(INSTALL_GUIDE_DISMISSED_KEY) === "1";
+    setShowInstallGuide(!dismissed);
+  }, []);
 
   if (authSession.isLoading) {
     return (
@@ -80,6 +90,12 @@ export default function Home() {
     setNewTopicName("");
     setNewTopicOpen(false);
     debugLog("Topic 생성됨", topic);
+  }
+
+  function handleDismissInstallGuide() {
+    setInstallGuideOpen(false);
+    setShowInstallGuide(false);
+    window.localStorage.setItem(INSTALL_GUIDE_DISMISSED_KEY, "1");
   }
 
   const showAccountBar = isFirebaseConfigured();
@@ -136,6 +152,71 @@ export default function Home() {
             >
               + Topic 추가
             </button>
+            {showInstallGuide ? (
+              <section
+                aria-labelledby="install-guide-title"
+                className="mt-3 rounded-xl border border-zinc-300 bg-zinc-100/80 p-4"
+              >
+                <h2
+                  id="install-guide-title"
+                  className="text-sm font-semibold text-zinc-900"
+                >
+                  홈 화면에 추가해서 앱처럼 사용해보세요
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-700">
+                  브라우저 공유 버튼에서 홈 화면 추가를 선택하면 더 빠르게
+                  기록할 수 있어요.
+                </p>
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDismissInstallGuide}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-200"
+                  >
+                    다시 보지 않기
+                  </button>
+                  <button
+                    type="button"
+                    aria-expanded={installGuideOpen}
+                    aria-controls="install-guide-details"
+                    onClick={() => setInstallGuideOpen((open) => !open)}
+                    className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100"
+                  >
+                    {installGuideOpen ? "설치 방법 닫기" : "설치 방법 보기"}
+                  </button>
+                </div>
+              </section>
+            ) : null}
+
+            {showInstallGuide && installGuideOpen ? (
+              <section
+                id="install-guide-details"
+                aria-label="홈 화면 설치 방법"
+                className="mt-3 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4"
+              >
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">
+                    iPhone (Safari)
+                  </h3>
+                  <p className="mt-1 text-sm text-zinc-700">
+                    공유 버튼을 누른 뒤 홈 화면에 추가를 선택하고 추가를
+                    눌러주세요.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">
+                    Android (Chrome)
+                  </h3>
+                  <p className="mt-1 text-sm text-zinc-700">
+                    메뉴(⋮)에서 홈 화면에 추가 또는 앱 설치를 선택한 뒤 설치를
+                    눌러주세요.
+                  </p>
+                </div>
+                <p className="rounded-lg bg-white px-3 py-2 text-sm text-zinc-600">
+                  설치 후 홈 화면 아이콘으로 열면 더 앱처럼 사용할 수 있어요.
+                </p>
+              </section>
+            ) : null}
 
             {newTopicOpen ? (
               <div className="mt-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50/80 p-3">
