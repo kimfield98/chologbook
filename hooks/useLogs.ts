@@ -6,12 +6,12 @@ import {
   clearLogsByTopic as clearLogsByTopicInFirestore,
   getLogsFromFirestore,
 } from "@/lib/chologbook/firestoreLogs";
-import { getLogsByTopic, stampLog } from "@/lib/chologbook/logs";
-import type { Log } from "@/lib/chologbook/types";
+import { getLogType, getLogsByTopic, stampLog } from "@/lib/chologbook/logs";
+import type { Log, LogType } from "@/lib/chologbook/types";
 import { initFirebase, isFirebaseConfigured } from "@/lib/firebase";
 import { debugLog } from "@/lib/debugLog";
 
-export type LogInput = { date: string; text: string };
+export type LogInput = { date: string; text: string; type?: LogType };
 
 type UseLogsOptions = {
   /** 익명 Auth uid — 없으면 Firestore 미사용·로그 생성 불가 */
@@ -83,8 +83,14 @@ export function useLogs({ userId }: UseLogsOptions) {
 
       const prev = logsRef.current;
       const forTopic = getLogsByTopic(prev, topicId);
-      if (forTopic.some((l) => l.date === entry.date)) {
-        console.log("[useLogs:addLog] 중복 날짜 — 스킵", {
+      const entryType: LogType = entry.type ?? "patch";
+      if (
+        entryType === "patch" &&
+        forTopic.some(
+          (l) => getLogType(l) === "patch" && l.date === entry.date,
+        )
+      ) {
+        console.log("[useLogs:addLog] Patch 중복 날짜 — 스킵", {
           topicId,
           date: entry.date,
         });
@@ -96,7 +102,12 @@ export function useLogs({ userId }: UseLogsOptions) {
 
       setLogs((p) => {
         const ft = getLogsByTopic(p, topicId);
-        if (ft.some((l) => l.date === entry.date)) return p;
+        if (
+          entryType === "patch" &&
+          ft.some((l) => getLogType(l) === "patch" && l.date === entry.date)
+        ) {
+          return p;
+        }
         return [...p, newLog];
       });
 

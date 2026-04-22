@@ -44,6 +44,7 @@ export async function addLogToFirestore(log: Log): Promise<void> {
       topicId: log.topicId,
       date: log.date,
       text: log.text,
+      type: log.type ?? "patch",
       createdAt: serverTimestamp(),
     };
     await setDoc(ref, payload);
@@ -77,6 +78,7 @@ export async function getLogsFromFirestore(userId: string): Promise<Log[]> {
         topicId?: string;
         date?: string;
         text?: string;
+        type?: string;
         createdAt?: Timestamp;
       };
       return {
@@ -85,6 +87,7 @@ export async function getLogsFromFirestore(userId: string): Promise<Log[]> {
         topicId: String(data.topicId ?? ""),
         date: String(data.date ?? ""),
         text: String(data.text ?? ""),
+        type: data.type === "minor" ? ("minor" as const) : undefined,
         createdAt: data.createdAt,
       };
     });
@@ -97,13 +100,11 @@ export async function getLogsFromFirestore(userId: string): Promise<Log[]> {
       return a.id.localeCompare(b.id);
     });
 
-    return rows.map(({ id, userId: uid, topicId, date, text }) => ({
-      id,
-      userId: uid,
-      topicId,
-      date,
-      text,
-    }));
+    return rows.map(({ id, userId: uid, topicId, date, text, type }) => {
+      const log: Log = { id, userId: uid, topicId, date, text };
+      if (type === "minor") log.type = "minor";
+      return log;
+    });
   } catch (e) {
     console.error("[firestoreLogs] getLogsFromFirestore failed", e);
     throw e;

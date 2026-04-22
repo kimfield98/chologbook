@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { computeStreak, sortLogsNewestFirst } from "@/lib/chologbook/date-logic";
-import { getLogsByTopic } from "@/lib/chologbook/logs";
+import { getLogType, getLogsByTopic } from "@/lib/chologbook/logs";
 import type { Log, Topic } from "@/lib/chologbook/types";
 
 type TopicCardProps = {
@@ -24,9 +24,14 @@ export function TopicCard({
     [allLogs, topic.id],
   );
 
-  const streak = useMemo(
-    () => computeStreak(topicLogs.map((l) => l.date)),
+  const patchLogs = useMemo(
+    () => topicLogs.filter((l) => getLogType(l) === "patch"),
     [topicLogs],
+  );
+
+  const streak = useMemo(
+    () => computeStreak(patchLogs.map((l) => l.date)),
+    [patchLogs],
   );
 
   const previewLog = useMemo(
@@ -53,7 +58,7 @@ export function TopicCard({
           <p className="text-xs font-medium text-emerald-700">🌱 현재 집중</p>
         ) : null}
         <span className="text-xs text-zinc-600">
-          🔥 {streak}일 유지 중 · 🧺 {topicLogs.length}개 쌓임
+          🔥 {streak}일 유지 중 · 🧺 {patchLogs.length}개 쌓임
         </span>
         {previewLog ? (
           <span className="truncate text-xs text-zinc-500">→ {previewLog.text}</span>

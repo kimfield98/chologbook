@@ -37,11 +37,15 @@ export function computeStreak(dates: string[]): number {
 
 /** 로그를 날짜 기준 최신순(내림차순)으로 정렬 */
 export function sortLogsNewestFirst(logs: Log[]): Log[] {
-  return [...logs].sort((a, b) =>
-    a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
-  );
+  return [...logs].sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    return a.id.localeCompare(b.id);
+  });
 }
 
+/** 해당 날짜에 Patch가 이미 있는지 (하루 1 Patch 제한용) */
 export function hasLogForDate(topicLogs: Log[], date: string): boolean {
-  return topicLogs.some((l) => l.date === date);
+  return topicLogs.some(
+    (l) => (l.type ?? "patch") === "patch" && l.date === date,
+  );
 }

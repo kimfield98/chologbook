@@ -1,10 +1,11 @@
-import { getLogsByTopic } from "@/lib/chologbook/logs";
+import { getLogType, getLogsByTopic } from "@/lib/chologbook/logs";
 import type { Log, Topic } from "@/lib/chologbook/types";
 
-/** 해당 토픽의 가장 이른 날짜 로그 텍스트를 제목 후보로 쓴다(첫 Patch가 보통 topic.title과 동일). */
+/** 해당 토픽의 가장 이른 Patch 텍스트를 제목 후보로 쓴다. */
 function inferTitleFromLogs(logsForTopic: Log[]): string {
-  if (logsForTopic.length === 0) return "기록";
-  const sorted = [...logsForTopic].sort((a, b) => {
+  const patches = logsForTopic.filter((l) => getLogType(l) === "patch");
+  if (patches.length === 0) return "기록";
+  const sorted = [...patches].sort((a, b) => {
     if (a.date !== b.date) return a.date < b.date ? -1 : 1;
     return a.id.localeCompare(b.id);
   });
