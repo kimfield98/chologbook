@@ -61,22 +61,39 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     return getLogsByTopic(logs, selectedTopicId);
   }, [logs, selectedTopicId]);
 
-  const patchLogs = useMemo(
-    () => topicLogs.filter((l) => getLogType(l) === "patch"),
+  /** 시간순 정렬 — Major 구간 경계(lastMajorIndex) 계산용 */
+  const topicLogsSorted = useMemo(
+    () => sortLogsOldestFirst(topicLogs),
     [topicLogs],
+  );
+
+  /** 가장 마지막 Major의 인덱스(없으면 -1). topicLogsSorted 기준 */
+  const lastMajorIndex = useMemo(() => {
+    let idx = -1;
+    for (let i = 0; i < topicLogsSorted.length; i += 1) {
+      if (getLogType(topicLogsSorted[i]!) === "major") idx = i;
+    }
+    return idx;
+  }, [topicLogsSorted]);
+
+  /** 마지막 Major 이후만 "현재 구간" UI 판단에 사용 */
+  const currentLogs = useMemo(() => {
+    if (lastMajorIndex === -1) return topicLogsSorted;
+    return topicLogsSorted.slice(lastMajorIndex + 1);
+  }, [topicLogsSorted, lastMajorIndex]);
+
+  const patchLogs = useMemo(
+    () => currentLogs.filter((l) => getLogType(l) === "patch"),
+    [currentLogs],
   );
 
   const minorLogs = useMemo(
-    () => topicLogs.filter((l) => getLogType(l) === "minor"),
-    [topicLogs],
-  );
-
-  const majorLogs = useMemo(
-    () => topicLogs.filter((l) => getLogType(l) === "major"),
-    [topicLogs],
+    () => currentLogs.filter((l) => getLogType(l) === "minor"),
+    [currentLogs],
   );
 
   const patchCount = patchLogs.length;
+  const minorCount = minorLogs.length;
 
   useEffect(() => {
     if (!selectedTopicId) {
@@ -89,37 +106,46 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     prevPatchCountRef.current = patchCount;
   }, [selectedTopicId, patchCount]);
 
+  /** 구간이 바뀌면(새 Major 직후 등) Minor 분기 dismiss 초기화 */
+  useEffect(() => {
+    setMinorForkDismissed(false);
+  }, [lastMajorIndex]);
+
   const streak = useMemo(
     () => computeStreak(patchLogs.map((l) => l.date)),
     [patchLogs],
   );
 
-  /** Patch / Minor / Major 시간순(오래된 것 → 최신) */
+  /** Patch / Minor / Major 시간순 — 전체 토픽(저장 데이터 그대로 표시) */
   const sortedLogs = useMemo(
     () => sortLogsOldestFirst(topicLogs),
     [topicLogs],
   );
 
+  /** Major 작성 시 참고: 현재 구간의 Patch·Minor만 */
   const referenceLogsPatchMinor = useMemo(
     () =>
       sortLogsOldestFirst(
-        topicLogs.filter(
+        currentLogs.filter(
           (l) => getLogType(l) === "patch" || getLogType(l) === "minor",
         ),
       ),
-    [topicLogs],
+    [currentLogs],
   );
 
+  /** 전체 토픽 기준 가장 최근 Major → 다음 Patch 방향(상단 안내) */
   const latestNextPatchDirection = useMemo(() => {
-    const newest = sortLogsNewestFirst(majorLogs)[0];
-    if (!newest?.text) return "";
-    const extracted = extractNextPatchDirectionFromMajor(newest.text);
-    return extracted.trim();
-  }, [majorLogs]);
+    if (lastMajorIndex < 0) return "";
+    const row = topicLogsSorted[lastMajorIndex];
+    if (!row?.text) return "";
+    return extractNextPatchDirectionFromMajor(row.text).trim();
+  }, [lastMajorIndex, topicLogsSorted]);
 
-  const canStartMajor = minorLogs.length >= 2;
+  const canStartMajor = minorCount >= 2;
 
-  const showMajorTimingMessage = canStartMajor && !majorInputMode;
+  /** Minor ≥ 2일 때 Major CTA (현재 구간 기준) */
+  const showMajorCTA = canStartMajor && !majorInputMode;
+  const showMajorTimingMessage = showMajorCTA;
 
   const showMinorFork =
     patchCount >= PATCH_COUNT_FOR_MINOR_FORK &&
@@ -128,8 +154,8 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     !majorInputMode;
 
   const alreadyPatchedToday = useMemo(
-    () => todayKey !== "" && hasLogForDate(topicLogs, todayKey),
-    [todayKey, topicLogs],
+    () => todayKey !== "" && hasLogForDate(currentLogs, todayKey),
+    [todayKey, currentLogs],
   );
 
   const patchDisabled = useMemo(
@@ -273,7 +299,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
       patchDisabled,
       selectedTopicId,
       todayKey,
-      topicLogsLen: topicLogs.length,
+      currentLogsLen: currentLogs.length,
     });
 
     if (!selectedTopicId || !selectedTopic || patchDisabled) {
@@ -288,7 +314,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
       });
       return;
     }
-    if (hasLogForDate(topicLogs, todayKey)) {
+    if (hasLogForDate(currentLogs, todayKey)) {
       console.log("[handlePatch] 조기 종료: 이미 해당 날짜 Patch 있음", {
         todayKey,
       });
@@ -311,7 +337,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     selectedTopicId,
     selectedTopic,
     patchDisabled,
-    topicLogs,
+    currentLogs,
     patchLogs,
     todayKey,
     addLog,
@@ -328,7 +354,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
       console.log("[handleSaveEditPatch] 조기 종료", { patchDisabled });
       return;
     }
-    if (hasLogForDate(topicLogs, todayKey)) {
+    if (hasLogForDate(currentLogs, todayKey)) {
       console.log("[handleSaveEditPatch] 조기 종료: 중복 날짜");
       return;
     }
@@ -346,7 +372,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     selectedTopicId,
     selectedTopic,
     patchDisabled,
-    topicLogs,
+    currentLogs,
     patchLogs,
     todayKey,
     editPatchText,
@@ -367,11 +393,13 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     /** 선택 Topic 전체 로그 */
     logs: topicLogs,
     patchCount,
+    minorCount,
     streak,
     sortedLogs,
     referenceLogsPatchMinor,
     latestNextPatchDirection,
     canStartMajor,
+    showMajorCTA,
     showMajorTimingMessage,
     showMinorFork,
     minorInputMode,
