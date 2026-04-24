@@ -43,6 +43,14 @@ export function sortLogsNewestFirst(logs: Log[]): Log[] {
   });
 }
 
+/** 로그를 날짜·id 기준 시간순(오래된 것 → 최신) */
+export function sortLogsOldestFirst(logs: Log[]): Log[] {
+  return [...logs].sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.id.localeCompare(b.id);
+  });
+}
+
 /** 해당 날짜에 Patch가 이미 있는지 (하루 1 Patch 제한용) */
 export function hasLogForDate(topicLogs: Log[], date: string): boolean {
   return topicLogs.some(

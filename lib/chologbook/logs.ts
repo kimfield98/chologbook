@@ -3,7 +3,9 @@ import { newLogId } from "@/lib/chologbook/id";
 
 /** `type` 생략·레거시 문서는 Patch로 간주 */
 export function getLogType(log: Log): LogType {
-  return log.type === "minor" ? "minor" : "patch";
+  if (log.type === "minor") return "minor";
+  if (log.type === "major") return "major";
+  return "patch";
 }
 
 /** 특정 Topic에 속한 로그만 (전역 `logs`에서 필터) */

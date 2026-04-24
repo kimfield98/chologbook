@@ -4,8 +4,8 @@ export type Topic = {
   title: string;
 };
 
-/** Patch(실행) vs Minor(피드백) — 생략 시 Patch로 간주 */
-export type LogType = "patch" | "minor";
+/** Patch(실행) · Minor(피드백) · Major(구간 정리) — 생략 시 Patch로 간주 */
+export type LogType = "patch" | "minor" | "major";
 
 /** 전역 리스트의 한 건 (Firestore는 항상 익명 Auth uid 기준으로 분리) */
 export type Log = {

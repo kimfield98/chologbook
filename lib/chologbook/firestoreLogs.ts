@@ -87,7 +87,12 @@ export async function getLogsFromFirestore(userId: string): Promise<Log[]> {
         topicId: String(data.topicId ?? ""),
         date: String(data.date ?? ""),
         text: String(data.text ?? ""),
-        type: data.type === "minor" ? ("minor" as const) : undefined,
+        type:
+          data.type === "minor"
+            ? ("minor" as const)
+            : data.type === "major"
+              ? ("major" as const)
+              : undefined,
         createdAt: data.createdAt,
       };
     });
@@ -103,6 +108,7 @@ export async function getLogsFromFirestore(userId: string): Promise<Log[]> {
     return rows.map(({ id, userId: uid, topicId, date, text, type }) => {
       const log: Log = { id, userId: uid, topicId, date, text };
       if (type === "minor") log.type = "minor";
+      else if (type === "major") log.type = "major";
       return log;
     });
   } catch (e) {

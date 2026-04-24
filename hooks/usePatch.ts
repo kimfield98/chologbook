@@ -6,7 +6,12 @@ import {
   formatYmd,
   hasLogForDate,
   sortLogsNewestFirst,
+  sortLogsOldestFirst,
 } from "@/lib/chologbook/date-logic";
+import {
+  buildMajorText,
+  extractNextPatchDirectionFromMajor,
+} from "@/lib/chologbook/majorTemplate";
 import { getLogType, getLogsByTopic } from "@/lib/chologbook/logs";
 import type { LogInput, LogsApi } from "@/hooks/useLogs";
 import type { TopicsApi } from "@/hooks/useTopics";
@@ -20,7 +25,7 @@ type PatchInput = Pick<TopicsApi, "topics" | "selectedTopicId"> &
   Pick<LogsApi, "logs" | "addLog">;
 
 /**
- * Patch UI·Minor 분기·오늘 키·피드백.
+ * Patch UI·Minor 분기·Major 정리·오늘 키·피드백.
  * 선택 Topic의 로그는 전역 `logs`에서 topicId로 필터한 파생값만 사용한다.
  */
 export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) {
@@ -40,6 +45,11 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   const [minorInputMode, setMinorInputMode] = useState(false);
   const [minorDraftText, setMinorDraftText] = useState("");
   const prevPatchCountRef = useRef(0);
+
+  const [majorInputMode, setMajorInputMode] = useState(false);
+  const [majorDraftChange, setMajorDraftChange] = useState("");
+  const [majorDraftMoment, setMajorDraftMoment] = useState("");
+  const [majorDraftNext, setMajorDraftNext] = useState("");
 
   const selectedTopic = useMemo((): Topic | undefined => {
     if (selectedTopicId === null) return undefined;
@@ -61,6 +71,11 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     [topicLogs],
   );
 
+  const majorLogs = useMemo(
+    () => topicLogs.filter((l) => getLogType(l) === "major"),
+    [topicLogs],
+  );
+
   const patchCount = patchLogs.length;
 
   useEffect(() => {
@@ -79,17 +94,38 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     [patchLogs],
   );
 
+  /** Patch / Minor / Major 시간순(오래된 것 → 최신) */
   const sortedLogs = useMemo(
-    () => sortLogsNewestFirst(topicLogs),
+    () => sortLogsOldestFirst(topicLogs),
     [topicLogs],
   );
 
-  const showMajorTimingMessage = minorLogs.length >= 2;
+  const referenceLogsPatchMinor = useMemo(
+    () =>
+      sortLogsOldestFirst(
+        topicLogs.filter(
+          (l) => getLogType(l) === "patch" || getLogType(l) === "minor",
+        ),
+      ),
+    [topicLogs],
+  );
+
+  const latestNextPatchDirection = useMemo(() => {
+    const newest = sortLogsNewestFirst(majorLogs)[0];
+    if (!newest?.text) return "";
+    const extracted = extractNextPatchDirectionFromMajor(newest.text);
+    return extracted.trim();
+  }, [majorLogs]);
+
+  const canStartMajor = minorLogs.length >= 2;
+
+  const showMajorTimingMessage = canStartMajor && !majorInputMode;
 
   const showMinorFork =
     patchCount >= PATCH_COUNT_FOR_MINOR_FORK &&
     !minorInputMode &&
-    !minorForkDismissed;
+    !minorForkDismissed &&
+    !majorInputMode;
 
   const alreadyPatchedToday = useMemo(
     () => todayKey !== "" && hasLogForDate(topicLogs, todayKey),
@@ -97,8 +133,12 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   );
 
   const patchDisabled = useMemo(
-    () => todayKey === "" || alreadyPatchedToday || !selectedTopicId,
-    [todayKey, alreadyPatchedToday, selectedTopicId],
+    () =>
+      todayKey === "" ||
+      alreadyPatchedToday ||
+      !selectedTopicId ||
+      majorInputMode,
+    [todayKey, alreadyPatchedToday, selectedTopicId, majorInputMode],
   );
 
   useEffect(() => {
@@ -114,6 +154,10 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
       setMinorForkDismissed(false);
       setMinorInputMode(false);
       setMinorDraftText("");
+      setMajorInputMode(false);
+      setMajorDraftChange("");
+      setMajorDraftMoment("");
+      setMajorDraftNext("");
       if (feedbackClearRef.current) {
         clearTimeout(feedbackClearRef.current);
         feedbackClearRef.current = null;
@@ -164,6 +208,63 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     selectedTopic,
     todayKey,
     minorDraftText,
+    addLog,
+  ]);
+
+  const handleOpenMajorComposer = useCallback(() => {
+    if (!canStartMajor) return;
+    setMinorInputMode(false);
+    setMajorDraftChange("");
+    setMajorDraftMoment("");
+    setMajorDraftNext("");
+    setMajorInputMode(true);
+  }, [canStartMajor]);
+
+  const handleCancelMajor = useCallback(() => {
+    setMajorInputMode(false);
+    setMajorDraftChange("");
+    setMajorDraftMoment("");
+    setMajorDraftNext("");
+  }, []);
+
+  const majorSaveDisabled =
+    !majorDraftChange.trim() ||
+    !majorDraftMoment.trim() ||
+    !majorDraftNext.trim() ||
+    !todayKey;
+
+  const handleSaveMajor = useCallback(async () => {
+    if (
+      !selectedTopicId ||
+      !selectedTopic ||
+      majorSaveDisabled ||
+      !todayKey.trim()
+    ) {
+      return;
+    }
+    const text = buildMajorText({
+      change: majorDraftChange,
+      moment: majorDraftMoment,
+      nextPatch: majorDraftNext,
+    });
+    await addLog(selectedTopicId, {
+      date: todayKey,
+      text,
+      type: "major",
+    });
+    setMajorInputMode(false);
+    setMajorDraftChange("");
+    setMajorDraftMoment("");
+    setMajorDraftNext("");
+    debugLog("major:saved", { topicId: selectedTopicId, date: todayKey });
+  }, [
+    selectedTopicId,
+    selectedTopic,
+    todayKey,
+    majorDraftChange,
+    majorDraftMoment,
+    majorDraftNext,
+    majorSaveDisabled,
     addLog,
   ]);
 
@@ -263,11 +364,14 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   return {
     todayKey,
     selectedTopic,
-    /** 선택 Topic 전체 로그 (Patch + Minor) */
+    /** 선택 Topic 전체 로그 */
     logs: topicLogs,
     patchCount,
     streak,
     sortedLogs,
+    referenceLogsPatchMinor,
+    latestNextPatchDirection,
+    canStartMajor,
     showMajorTimingMessage,
     showMinorFork,
     minorInputMode,
@@ -277,6 +381,17 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     handleOpenMinorInput,
     handleCancelMinor,
     handleSaveMinor,
+    majorInputMode,
+    majorDraftChange,
+    setMajorDraftChange,
+    majorDraftMoment,
+    setMajorDraftMoment,
+    majorDraftNext,
+    setMajorDraftNext,
+    handleOpenMajorComposer,
+    handleCancelMajor,
+    handleSaveMajor,
+    majorSaveDisabled,
     alreadyPatchedToday,
     patchDisabled,
     editPatchOpen,
