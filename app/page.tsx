@@ -278,8 +278,9 @@ export default function Home() {
             sortedLogs={patch.sortedLogs}
             referenceLogsPatchMinor={patch.referenceLogsPatchMinor}
             latestNextPatchDirection={patch.latestNextPatchDirection}
-            showMajorTimingMessage={patch.showMajorTimingMessage}
             canStartMajor={patch.canStartMajor}
+            majorLockHint={patch.majorLockHint}
+            majorProgressLabel={patch.majorProgressLabel}
             onOpenMajorComposer={patch.handleOpenMajorComposer}
             majorInputMode={patch.majorInputMode}
             majorDraftChange={patch.majorDraftChange}

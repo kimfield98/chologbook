@@ -12,8 +12,9 @@ export type TopicDetailProps = {
   sortedLogs: Log[];
   referenceLogsPatchMinor: Log[];
   latestNextPatchDirection: string;
-  showMajorTimingMessage: boolean;
   canStartMajor: boolean;
+  majorLockHint: string;
+  majorProgressLabel: string;
   onOpenMajorComposer: () => void;
   majorInputMode: boolean;
   majorDraftChange: string;
@@ -47,8 +48,9 @@ export function TopicDetail({
   sortedLogs,
   referenceLogsPatchMinor,
   latestNextPatchDirection,
-  showMajorTimingMessage,
   canStartMajor,
+  majorLockHint,
+  majorProgressLabel,
   onOpenMajorComposer,
   majorInputMode,
   majorDraftChange,
@@ -214,25 +216,6 @@ export function TopicDetail({
         </div>
       ) : (
         <div className="mt-6 space-y-3">
-          {showMajorTimingMessage ? (
-            <div className="rounded-xl border border-violet-200 bg-violet-50/90 px-4 py-3 space-y-3">
-              <p
-                className="text-center text-sm font-medium leading-relaxed text-violet-900 whitespace-pre-line"
-                role="status"
-              >
-                {`이제는 정리할 타이밍입니다.\n당신의 변화를 하나의 글로 남겨보세요.`}
-              </p>
-              <button
-                type="button"
-                onClick={onOpenMajorComposer}
-                disabled={!canStartMajor}
-                className="flex w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition enabled:hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
-              >
-                정리 글 작성하기 (Major)
-              </button>
-            </div>
-          ) : null}
-
           <button
             type="button"
             onClick={onPatch}
@@ -308,6 +291,29 @@ export function TopicDetail({
               </div>
             </div>
           ) : null}
+
+          <div className="space-y-1.5 border-t border-zinc-100 pt-3">
+            <p className="text-center text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+              구간 정리 · Major
+            </p>
+            <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
+              <span>이 구간 한 줄</span>
+              <span className="font-mono font-medium text-zinc-700">
+                {majorProgressLabel}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenMajorComposer}
+              disabled={!canStartMajor || todayKey === ""}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-300 bg-stone-100 px-4 py-3 text-sm font-semibold text-stone-900 shadow-sm transition enabled:hover:bg-stone-200/90 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none"
+            >
+              구간 정리하기 (Major)
+            </button>
+            <p className="text-center text-xs leading-relaxed text-zinc-600">
+              {majorLockHint}
+            </p>
+          </div>
         </div>
       )}
 

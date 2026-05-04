@@ -8,6 +8,9 @@ import {
   sortLogsOldestFirst,
 } from "@/lib/chologbook/date-logic";
 import {
+  describeMajorAvailability,
+} from "@/lib/chologbook/majorRules";
+import {
   buildMajorText,
   extractNextPatchDirectionFromMajor,
 } from "@/lib/chologbook/majorTemplate";
@@ -116,11 +119,17 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     return extractNextPatchDirectionFromMajor(row.text).trim();
   }, [lastMajorIndex, topicLogsSorted]);
 
-  const canStartMajor = minorCount >= 2;
+  const majorAvailability = useMemo(
+    () =>
+      describeMajorAvailability({
+        todayKey,
+        minorCount,
+      }),
+    [todayKey, minorCount],
+  );
 
-  /** Minor ≥ 2일 때 Major CTA (현재 구간 기준) */
-  const showMajorCTA = canStartMajor && !majorInputMode;
-  const showMajorTimingMessage = showMajorCTA;
+  const canStartMajor =
+    Boolean(selectedTopicId) && majorAvailability.canOpen;
 
   const alreadyPatchedToday = useMemo(
     () => todayKey !== "" && hasLogForDate(currentLogs, todayKey),
@@ -233,13 +242,13 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   ]);
 
   const handleOpenMajorComposer = useCallback(() => {
-    if (!canStartMajor) return;
+    if (!selectedTopicId || !majorAvailability.canOpen) return;
     setMinorInputMode(false);
     setMajorDraftChange("");
     setMajorDraftMoment("");
     setMajorDraftNext("");
     setMajorInputMode(true);
-  }, [canStartMajor]);
+  }, [selectedTopicId, majorAvailability.canOpen]);
 
   const handleCancelMajor = useCallback(() => {
     setMajorInputMode(false);
@@ -261,6 +270,18 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
       majorSaveDisabled ||
       !todayKey.trim()
     ) {
+      return;
+    }
+    const guard = describeMajorAvailability({
+      todayKey,
+      minorCount,
+    });
+    if (!guard.canOpen) {
+      debugLog("major:reject-guard", {
+        topicId: selectedTopicId,
+        todayKey,
+        minorCount,
+      });
       return;
     }
     const text = buildMajorText({
@@ -287,6 +308,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     majorDraftNext,
     majorSaveDisabled,
     addLog,
+    minorCount,
   ]);
 
   const handlePatch = useCallback(async () => {
@@ -351,8 +373,8 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     referenceLogsPatchMinor,
     latestNextPatchDirection,
     canStartMajor,
-    showMajorCTA,
-    showMajorTimingMessage,
+    majorLockHint: majorAvailability.hint,
+    majorProgressLabel: majorAvailability.progressLabel,
     minorInputMode,
     minorDraftText,
     setMinorDraftText,
