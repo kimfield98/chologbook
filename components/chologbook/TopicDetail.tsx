@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { patchTotalSummarySentence } from "@/lib/chologbook/patchTotalSummary";
 import { getLogType } from "@/lib/chologbook/logs";
 import type { Log } from "@/lib/chologbook/types";
 
 export type TopicDetailProps = {
   onHome: () => void;
   title: string;
-  streak: number;
-  patchCount: number;
+  totalPatchCount: number;
   sortedLogs: Log[];
   referenceLogsPatchMinor: Log[];
   latestNextPatchDirection: string;
@@ -49,8 +49,7 @@ export type TopicDetailProps = {
 export function TopicDetail({
   onHome,
   title,
-  streak,
-  patchCount,
+  totalPatchCount,
   sortedLogs,
   referenceLogsPatchMinor,
   latestNextPatchDirection,
@@ -129,23 +128,12 @@ export function TopicDetail({
         </div>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-600">
-        <span
-          className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-orange-800 ring-1 ring-orange-100"
-          title="연속 기록 일수 (Patch 기준)"
-        >
-          <span aria-hidden>🔥</span>
-          <span className="font-medium text-orange-900">{streak}일</span>
-          <span className="text-orange-700/90">유지 중</span>
-        </span>
-        <span
-          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-emerald-900 ring-1 ring-emerald-100"
-          title="쌓인 Patch 수"
-        >
-          <span aria-hidden>🧺</span>
-          <span className="font-medium">{patchCount}개 쌓임</span>
-        </span>
-      </div>
+      <p
+        className="mt-5 text-center text-sm leading-relaxed text-zinc-600"
+        title="이 토픽에 남긴 Patch 총개수"
+      >
+        {patchTotalSummarySentence(totalPatchCount)}
+      </p>
 
       {majorInputMode ? (
         <div className="mt-6 space-y-4">

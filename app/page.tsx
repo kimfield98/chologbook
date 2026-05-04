@@ -274,8 +274,7 @@ export default function Home() {
           <TopicDetail
             onHome={topicsApi.goHome}
             title={patch.selectedTopic.title}
-            streak={patch.streak}
-            patchCount={patch.patchCount}
+            totalPatchCount={patch.totalPatchCount}
             sortedLogs={patch.sortedLogs}
             referenceLogsPatchMinor={patch.referenceLogsPatchMinor}
             latestNextPatchDirection={patch.latestNextPatchDirection}

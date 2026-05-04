@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  computeStreak,
   formatYmd,
   hasLogForDate,
   sortLogsNewestFirst,
@@ -87,6 +86,11 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     [currentLogs],
   );
 
+  const totalPatchCount = useMemo(
+    () => topicLogs.filter((l) => getLogType(l) === "patch").length,
+    [topicLogs],
+  );
+
   const minorLogs = useMemo(
     () => currentLogs.filter((l) => getLogType(l) === "minor"),
     [currentLogs],
@@ -110,11 +114,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   useEffect(() => {
     setMinorForkDismissed(false);
   }, [lastMajorIndex]);
-
-  const streak = useMemo(
-    () => computeStreak(patchLogs.map((l) => l.date)),
-    [patchLogs],
-  );
 
   /** Patch / Minor / Major 시간순 — 전체 토픽(저장 데이터 그대로 표시) */
   const sortedLogs = useMemo(
@@ -191,10 +190,12 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     });
   }, [selectedTopicId]);
 
-  const showPatchSuccessFeedback = useCallback((nextStreak: number) => {
+  const showPatchSuccessFeedback = useCallback((nextTotalPatchCount: number) => {
     if (feedbackClearRef.current) clearTimeout(feedbackClearRef.current);
     const msg =
-      nextStreak >= 2 ? "🔥 흐름 이어가는 중" : "✔ 잘 쌓이고 있어요";
+      nextTotalPatchCount === 1
+        ? "첫 Patch를 남겼어요"
+        : "오늘 기록을 남겼어요";
     setFeedbackMessage(msg);
     feedbackClearRef.current = setTimeout(() => {
       setFeedbackMessage("");
@@ -325,21 +326,23 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
       text: selectedTopic.title,
       type: "patch",
     };
-    const nextStreak = computeStreak([
-      ...patchLogs.map((l) => l.date),
-      entry.date,
-    ]);
+    /** 토픽 전체 누적 기준(구간과 무관) — 저장 직후 피드백 문구용 */
+    const nextTotalPatchCount = totalPatchCount + 1;
     await addLog(selectedTopicId, entry);
     setEditPatchOpen(false);
-    showPatchSuccessFeedback(nextStreak);
-    debugLog("patch:quick", { topicId: selectedTopicId, entry, nextStreak });
+    showPatchSuccessFeedback(nextTotalPatchCount);
+    debugLog("patch:quick", {
+      topicId: selectedTopicId,
+      entry,
+      nextTotalPatchCount,
+    });
   }, [
     selectedTopicId,
     selectedTopic,
     patchDisabled,
     currentLogs,
-    patchLogs,
     todayKey,
+    totalPatchCount,
     addLog,
     showPatchSuccessFeedback,
   ]);
@@ -360,21 +363,22 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     }
     const text = editPatchText.trim() || selectedTopic.title;
     const entry: LogInput = { date: todayKey, text, type: "patch" };
-    const nextStreak = computeStreak([
-      ...patchLogs.map((l) => l.date),
-      entry.date,
-    ]);
+    const nextTotalPatchCount = totalPatchCount + 1;
     await addLog(selectedTopicId, entry);
     setEditPatchOpen(false);
-    showPatchSuccessFeedback(nextStreak);
-    debugLog("patch:edit", { topicId: selectedTopicId, entry, nextStreak });
+    showPatchSuccessFeedback(nextTotalPatchCount);
+    debugLog("patch:edit", {
+      topicId: selectedTopicId,
+      entry,
+      nextTotalPatchCount,
+    });
   }, [
     selectedTopicId,
     selectedTopic,
     patchDisabled,
     currentLogs,
-    patchLogs,
     todayKey,
+    totalPatchCount,
     editPatchText,
     addLog,
     showPatchSuccessFeedback,
@@ -393,8 +397,8 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     /** 선택 Topic 전체 로그 */
     logs: topicLogs,
     patchCount,
+    totalPatchCount,
     minorCount,
-    streak,
     sortedLogs,
     referenceLogsPatchMinor,
     latestNextPatchDirection,

@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { computeStreak, sortLogsNewestFirst } from "@/lib/chologbook/date-logic";
+import { sortLogsNewestFirst } from "@/lib/chologbook/date-logic";
+import { patchTotalSummarySentence } from "@/lib/chologbook/patchTotalSummary";
 import { getLogType, getLogsByTopic } from "@/lib/chologbook/logs";
 import type { Log, Topic } from "@/lib/chologbook/types";
 
@@ -29,11 +30,6 @@ export function TopicCard({
     [topicLogs],
   );
 
-  const streak = useMemo(
-    () => computeStreak(patchLogs.map((l) => l.date)),
-    [patchLogs],
-  );
-
   const previewLog = useMemo(
     () => sortLogsNewestFirst(topicLogs)[0],
     [topicLogs],
@@ -57,8 +53,8 @@ export function TopicCard({
         {isCurrentFocus ? (
           <p className="text-xs font-medium text-emerald-700">🌱 현재 집중</p>
         ) : null}
-        <span className="text-xs text-zinc-600">
-          🔥 {streak}일 유지 중 · 🧺 {patchLogs.length}개 쌓임
+        <span className="text-xs leading-snug text-zinc-500">
+          {patchTotalSummarySentence(patchLogs.length)}
         </span>
         {previewLog ? (
           <span className="truncate text-xs text-zinc-500">→ {previewLog.text}</span>
