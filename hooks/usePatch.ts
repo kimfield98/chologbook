@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   formatYmd,
   hasLogForDate,
-  sortLogsNewestFirst,
   sortLogsOldestFirst,
 } from "@/lib/chologbook/date-logic";
 import {
@@ -35,8 +34,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     });
   }, []);
 
-  const [editPatchOpen, setEditPatchOpen] = useState(false);
-  const [editPatchText, setEditPatchText] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const feedbackClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -174,7 +171,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
 
   useEffect(() => {
     queueMicrotask(() => {
-      setEditPatchOpen(false);
       setFeedbackMessage("");
       setMinorForkDismissed(false);
       setMinorInputMode(false);
@@ -329,7 +325,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     /** 토픽 전체 누적 기준(구간과 무관) — 저장 직후 피드백 문구용 */
     const nextTotalPatchCount = totalPatchCount + 1;
     await addLog(selectedTopicId, entry);
-    setEditPatchOpen(false);
     showPatchSuccessFeedback(nextTotalPatchCount);
     debugLog("patch:quick", {
       topicId: selectedTopicId,
@@ -346,50 +341,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     addLog,
     showPatchSuccessFeedback,
   ]);
-
-  const handleSaveEditPatch = useCallback(async () => {
-    console.log("[handleSaveEditPatch] 실행됨", {
-      patchDisabled,
-      selectedTopicId,
-      todayKey,
-    });
-    if (!selectedTopicId || !selectedTopic || patchDisabled) {
-      console.log("[handleSaveEditPatch] 조기 종료", { patchDisabled });
-      return;
-    }
-    if (hasLogForDate(currentLogs, todayKey)) {
-      console.log("[handleSaveEditPatch] 조기 종료: 중복 날짜");
-      return;
-    }
-    const text = editPatchText.trim() || selectedTopic.title;
-    const entry: LogInput = { date: todayKey, text, type: "patch" };
-    const nextTotalPatchCount = totalPatchCount + 1;
-    await addLog(selectedTopicId, entry);
-    setEditPatchOpen(false);
-    showPatchSuccessFeedback(nextTotalPatchCount);
-    debugLog("patch:edit", {
-      topicId: selectedTopicId,
-      entry,
-      nextTotalPatchCount,
-    });
-  }, [
-    selectedTopicId,
-    selectedTopic,
-    patchDisabled,
-    currentLogs,
-    todayKey,
-    totalPatchCount,
-    editPatchText,
-    addLog,
-    showPatchSuccessFeedback,
-  ]);
-
-  const openEditPatch = useCallback(() => {
-    if (!selectedTopic) return;
-    const newest = sortLogsNewestFirst(patchLogs)[0];
-    setEditPatchText(newest?.text || selectedTopic.title);
-    setEditPatchOpen(true);
-  }, [selectedTopic, patchLogs]);
 
   return {
     todayKey,
@@ -426,13 +377,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     majorSaveDisabled,
     alreadyPatchedToday,
     patchDisabled,
-    editPatchOpen,
-    setEditPatchOpen,
-    editPatchText,
-    setEditPatchText,
     feedbackMessage,
     handlePatch,
-    handleSaveEditPatch,
-    openEditPatch,
   };
 }

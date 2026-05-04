@@ -37,13 +37,7 @@ export type TopicDetailProps = {
   alreadyPatchedToday: boolean;
   patchDisabled: boolean;
   feedbackMessage: string;
-  editPatchOpen: boolean;
-  editPatchText: string;
-  onEditPatchText: (value: string) => void;
   onPatch: () => void;
-  onOpenEditPatch: () => void;
-  onCloseEditPatch: () => void;
-  onSaveEditPatch: () => void;
 };
 
 export function TopicDetail({
@@ -78,13 +72,7 @@ export function TopicDetail({
   alreadyPatchedToday,
   patchDisabled,
   feedbackMessage,
-  editPatchOpen,
-  editPatchText,
-  onEditPatchText,
   onPatch,
-  onOpenEditPatch,
-  onCloseEditPatch,
-  onSaveEditPatch,
 }: TopicDetailProps) {
   const minorSaveDisabled = !minorDraftText.trim();
   const [referenceOpen, setReferenceOpen] = useState(true);
@@ -325,48 +313,6 @@ export function TopicDetail({
             <p className="text-center text-xs text-zinc-400">
               날짜 정보를 불러오는 중…
             </p>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={onOpenEditPatch}
-            disabled={patchDisabled}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-base font-medium text-zinc-800 shadow-sm transition enabled:hover:bg-zinc-50 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:border-zinc-100 disabled:bg-zinc-50 disabled:text-zinc-400"
-          >
-            <span aria-hidden>✍️</span>
-            수정해서 기록
-          </button>
-
-          {editPatchOpen ? (
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-3 space-y-2">
-              <label className="block text-xs font-medium text-zinc-600">
-                오늘의 기록 (수정 가능)
-              </label>
-              <textarea
-                value={editPatchText}
-                onChange={(e) => onEditPatchText(e.target.value)}
-                rows={3}
-                className="w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:border-emerald-400 focus:ring-2"
-                placeholder="예: 아침에 4p 읽기"
-              />
-              <div className="flex gap-2 justify-end">
-                <button
-                  type="button"
-                  onClick={onCloseEditPatch}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100"
-                >
-                  닫기
-                </button>
-                <button
-                  type="button"
-                  onClick={onSaveEditPatch}
-                  disabled={patchDisabled}
-                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white enabled:hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
-                >
-                  저장
-                </button>
-              </div>
-            </div>
           ) : null}
         </div>
       )}

@@ -303,13 +303,7 @@ export default function Home() {
             alreadyPatchedToday={patch.alreadyPatchedToday}
             patchDisabled={patch.patchDisabled}
             feedbackMessage={patch.feedbackMessage}
-            editPatchOpen={patch.editPatchOpen}
-            editPatchText={patch.editPatchText}
-            onEditPatchText={patch.setEditPatchText}
             onPatch={patch.handlePatch}
-            onOpenEditPatch={patch.openEditPatch}
-            onCloseEditPatch={() => patch.setEditPatchOpen(false)}
-            onSaveEditPatch={patch.handleSaveEditPatch}
           />
         ) : null}
       </main>
