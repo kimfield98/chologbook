@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   formatYmd,
   hasLogForDate,
+  hasMinorForDate,
   sortLogsOldestFirst,
 } from "@/lib/chologbook/date-logic";
 import {
@@ -16,14 +17,11 @@ import type { TopicsApi } from "@/hooks/useTopics";
 import type { Topic } from "@/lib/chologbook/types";
 import { debugLog } from "@/lib/debugLog";
 
-/** Patch가 이 개수 이상이면 Minor 분기 UI */
-const PATCH_COUNT_FOR_MINOR_FORK = 3;
-
 type PatchInput = Pick<TopicsApi, "topics" | "selectedTopicId"> &
   Pick<LogsApi, "logs" | "addLog">;
 
 /**
- * Patch UI·Minor 분기·Major 정리·오늘 키·피드백.
+ * Patch UI·Minor(명시적 진입)·Major 정리·오늘 키·피드백.
  * 선택 Topic의 로그는 전역 `logs`에서 topicId로 필터한 파생값만 사용한다.
  */
 export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) {
@@ -37,10 +35,8 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const feedbackClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [minorForkDismissed, setMinorForkDismissed] = useState(false);
   const [minorInputMode, setMinorInputMode] = useState(false);
   const [minorDraftText, setMinorDraftText] = useState("");
-  const prevPatchCountRef = useRef(0);
 
   const [majorInputMode, setMajorInputMode] = useState(false);
   const [majorDraftChange, setMajorDraftChange] = useState("");
@@ -93,24 +89,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     [currentLogs],
   );
 
-  const patchCount = patchLogs.length;
   const minorCount = minorLogs.length;
-
-  useEffect(() => {
-    if (!selectedTopicId) {
-      prevPatchCountRef.current = 0;
-      return;
-    }
-    if (patchCount > prevPatchCountRef.current) {
-      setMinorForkDismissed(false);
-    }
-    prevPatchCountRef.current = patchCount;
-  }, [selectedTopicId, patchCount]);
-
-  /** 구간이 바뀌면(새 Major 직후 등) Minor 분기 dismiss 초기화 */
-  useEffect(() => {
-    setMinorForkDismissed(false);
-  }, [lastMajorIndex]);
 
   /** Patch / Minor / Major 시간순 — 전체 토픽(저장 데이터 그대로 표시) */
   const sortedLogs = useMemo(
@@ -143,12 +122,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   const showMajorCTA = canStartMajor && !majorInputMode;
   const showMajorTimingMessage = showMajorCTA;
 
-  const showMinorFork =
-    patchCount >= PATCH_COUNT_FOR_MINOR_FORK &&
-    !minorInputMode &&
-    !minorForkDismissed &&
-    !majorInputMode;
-
   const alreadyPatchedToday = useMemo(
     () => todayKey !== "" && hasLogForDate(currentLogs, todayKey),
     [todayKey, currentLogs],
@@ -163,6 +136,21 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     [todayKey, alreadyPatchedToday, selectedTopicId, majorInputMode],
   );
 
+  /** 토픽 전체 기준 — 같은 날 Minor는 한 번만 */
+  const alreadyMinoredToday = useMemo(
+    () => todayKey !== "" && hasMinorForDate(topicLogs, todayKey),
+    [todayKey, topicLogs],
+  );
+
+  const minorOpenDisabled = useMemo(
+    () =>
+      todayKey === "" ||
+      !selectedTopicId ||
+      majorInputMode ||
+      alreadyMinoredToday,
+    [todayKey, selectedTopicId, majorInputMode, alreadyMinoredToday],
+  );
+
   useEffect(() => {
     return () => {
       if (feedbackClearRef.current) clearTimeout(feedbackClearRef.current);
@@ -172,7 +160,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   useEffect(() => {
     queueMicrotask(() => {
       setFeedbackMessage("");
-      setMinorForkDismissed(false);
       setMinorInputMode(false);
       setMinorDraftText("");
       setMajorInputMode(false);
@@ -199,14 +186,18 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     }, 1800);
   }, []);
 
-  const handleContinueRecording = useCallback(() => {
-    setMinorForkDismissed(true);
-  }, []);
-
   const handleOpenMinorInput = useCallback(() => {
+    if (
+      !selectedTopicId ||
+      !todayKey ||
+      majorInputMode ||
+      hasMinorForDate(topicLogs, todayKey)
+    ) {
+      return;
+    }
     setMinorInputMode(true);
     setMinorDraftText("");
-  }, []);
+  }, [selectedTopicId, todayKey, majorInputMode, topicLogs]);
 
   const handleCancelMinor = useCallback(() => {
     setMinorInputMode(false);
@@ -216,6 +207,13 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   const handleSaveMinor = useCallback(async () => {
     const text = minorDraftText.trim();
     if (!selectedTopicId || !selectedTopic || !todayKey || !text) return;
+    if (hasMinorForDate(topicLogs, todayKey)) {
+      debugLog("minor:reject-duplicate-day", {
+        topicId: selectedTopicId,
+        date: todayKey,
+      });
+      return;
+    }
 
     await addLog(selectedTopicId, {
       date: todayKey,
@@ -224,13 +222,13 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     });
     setMinorInputMode(false);
     setMinorDraftText("");
-    setMinorForkDismissed(true);
     debugLog("minor:saved", { topicId: selectedTopicId, date: todayKey });
   }, [
     selectedTopicId,
     selectedTopic,
     todayKey,
     minorDraftText,
+    topicLogs,
     addLog,
   ]);
 
@@ -347,7 +345,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     selectedTopic,
     /** 선택 Topic 전체 로그 */
     logs: topicLogs,
-    patchCount,
     totalPatchCount,
     minorCount,
     sortedLogs,
@@ -356,11 +353,11 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     canStartMajor,
     showMajorCTA,
     showMajorTimingMessage,
-    showMinorFork,
     minorInputMode,
     minorDraftText,
     setMinorDraftText,
-    handleContinueRecording,
+    alreadyMinoredToday,
+    minorOpenDisabled,
     handleOpenMinorInput,
     handleCancelMinor,
     handleSaveMinor,

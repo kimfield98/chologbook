@@ -291,11 +291,11 @@ export default function Home() {
             onCancelMajor={patch.handleCancelMajor}
             onSaveMajor={patch.handleSaveMajor}
             majorSaveDisabled={patch.majorSaveDisabled}
-            showMinorFork={patch.showMinorFork}
             minorInputMode={patch.minorInputMode}
             minorDraftText={patch.minorDraftText}
             onMinorDraftText={patch.setMinorDraftText}
-            onContinueRecording={patch.handleContinueRecording}
+            alreadyMinoredToday={patch.alreadyMinoredToday}
+            minorOpenDisabled={patch.minorOpenDisabled}
             onOpenMinorInput={patch.handleOpenMinorInput}
             onCancelMinor={patch.handleCancelMinor}
             onSaveMinor={patch.handleSaveMinor}

@@ -30,3 +30,8 @@ export function hasLogForDate(topicLogs: Log[], date: string): boolean {
     (l) => (l.type ?? "patch") === "patch" && l.date === date,
   );
 }
+
+/** 해당 날짜에 Minor가 이미 있는지 (토픽당 하루 1 Minor 제한용) */
+export function hasMinorForDate(topicLogs: Log[], date: string): boolean {
+  return topicLogs.some((l) => l.type === "minor" && l.date === date);
+}

@@ -25,11 +25,11 @@ export type TopicDetailProps = {
   onCancelMajor: () => void;
   onSaveMajor: () => void;
   majorSaveDisabled: boolean;
-  showMinorFork: boolean;
   minorInputMode: boolean;
   minorDraftText: string;
   onMinorDraftText: (value: string) => void;
-  onContinueRecording: () => void;
+  alreadyMinoredToday: boolean;
+  minorOpenDisabled: boolean;
   onOpenMinorInput: () => void;
   onCancelMinor: () => void;
   onSaveMinor: () => void;
@@ -60,11 +60,11 @@ export function TopicDetail({
   onCancelMajor,
   onSaveMajor,
   majorSaveDisabled,
-  showMinorFork,
   minorInputMode,
   minorDraftText,
   onMinorDraftText,
-  onContinueRecording,
+  alreadyMinoredToday,
+  minorOpenDisabled,
   onOpenMinorInput,
   onCancelMinor,
   onSaveMinor,
@@ -252,40 +252,40 @@ export function TopicDetail({
             </p>
           ) : null}
 
-          {showMinorFork ? (
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50/90 p-4 space-y-3">
-              <p className="text-center text-sm font-medium text-zinc-800 whitespace-pre-line">
-                {`많이 쌓였어요.\n계속 기록을 이어가시겠어요, 아니면\n지금까지의 흐름에 대해 간단한 피드백을 남겨볼까요?`}
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-                <button
-                  type="button"
-                  onClick={onContinueRecording}
-                  className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-50"
-                >
-                  계속 기록
-                </button>
-                <button
-                  type="button"
-                  onClick={onOpenMinorInput}
-                  className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-                >
-                  피드백 남기기
-                </button>
-              </div>
+          {todayKey === "" ? (
+            <p className="text-center text-xs text-zinc-400">
+              날짜 정보를 불러오는 중…
+            </p>
+          ) : null}
+
+          {!minorInputMode ? (
+            <div className="space-y-1.5">
+              <button
+                type="button"
+                onClick={onOpenMinorInput}
+                disabled={minorOpenDisabled}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/90 bg-amber-50/95 px-4 py-3 text-sm font-semibold text-amber-950 shadow-sm ring-1 ring-amber-200/60 transition enabled:hover:bg-amber-100/90 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:ring-0 disabled:shadow-none"
+              >
+                오늘 한 줄 (Minor)
+              </button>
+              {alreadyMinoredToday ? (
+                <p className="text-center text-xs text-zinc-500">
+                  오늘은 이미 한 줄을 남겼어요.
+                </p>
+              ) : null}
             </div>
           ) : null}
 
           {minorInputMode ? (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 space-y-2">
-              <p className="text-xs font-medium text-emerald-900">
-                Minor · 지금까지의 느낌이나 변화를 짧게 남겨보세요
+            <div className="rounded-xl border border-amber-200/90 bg-amber-50/50 p-3 space-y-2 ring-1 ring-amber-100/80">
+              <p className="text-xs font-medium text-amber-950">
+                오늘 이 토픽에 대한 한 줄을 남겨보세요
               </p>
               <textarea
                 value={minorDraftText}
                 onChange={(e) => onMinorDraftText(e.target.value)}
                 rows={3}
-                className="w-full resize-y rounded-lg border border-emerald-200/80 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/30 focus:border-emerald-400 focus:ring-2"
+                className="w-full resize-y rounded-lg border border-amber-200/90 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-amber-500/25 focus:border-amber-400 focus:ring-2"
                 placeholder="예: 요즘 집중이 잘 된다"
                 autoFocus
               />
@@ -301,18 +301,12 @@ export function TopicDetail({
                   type="button"
                   onClick={onSaveMinor}
                   disabled={minorSaveDisabled}
-                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white enabled:hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                  className="rounded-lg bg-amber-800 px-3 py-2 text-sm font-semibold text-amber-50 enabled:hover:bg-amber-900 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
                 >
                   저장
                 </button>
               </div>
             </div>
-          ) : null}
-
-          {todayKey === "" ? (
-            <p className="text-center text-xs text-zinc-400">
-              날짜 정보를 불러오는 중…
-            </p>
           ) : null}
         </div>
       )}
@@ -361,7 +355,7 @@ export function TopicDetail({
                   key={log.id}
                   className={`flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 rounded-lg border px-3 py-2 text-zinc-800 ${
                     isMinor
-                      ? "border-violet-200 bg-violet-50/60"
+                      ? "border-orange-200/90 bg-orange-50/50"
                       : "border-zinc-100 bg-zinc-50/50"
                   }`}
                 >
@@ -369,7 +363,7 @@ export function TopicDetail({
                     <span
                       className={`mr-1.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                         isMinor
-                          ? "bg-violet-200 text-violet-900"
+                          ? "bg-orange-200/90 text-orange-950"
                           : "bg-emerald-100 text-emerald-900"
                       }`}
                     >
@@ -385,7 +379,7 @@ export function TopicDetail({
                         ✔
                       </span>
                     ) : (
-                      <span className="ml-1 text-violet-600" aria-hidden>
+                      <span className="ml-1 text-orange-700/90" aria-hidden>
                         💭
                       </span>
                     )}
