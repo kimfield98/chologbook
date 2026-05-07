@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { patchTotalSummarySentence } from "@/lib/chologbook/patchTotalSummary";
 import { getLogType } from "@/lib/chologbook/logs";
+import { countTopicVersion, topicVersionLabelFromLogs } from "@/lib/chologbook/topicVersion";
 import type { Log } from "@/lib/chologbook/types";
 
 export type TopicDetailProps = {
@@ -83,6 +83,8 @@ export function TopicDetail({
   const minorSaveDisabled = !minorDraftText.trim();
   const [referenceOpen, setReferenceOpen] = useState(true);
   const referenceOpenEffective = majorInputMode ? true : referenceOpen;
+  const versionLabel = topicVersionLabelFromLogs(sortedLogs);
+  const versionCounts = countTopicVersion(sortedLogs);
 
   return (
     <section
@@ -128,12 +130,14 @@ export function TopicDetail({
         </div>
       ) : null}
 
-      <p
-        className="mt-5 text-center text-sm leading-relaxed text-zinc-600"
-        title="이 토픽에 남긴 Patch 총개수"
-      >
-        {patchTotalSummarySentence(totalPatchCount)}
-      </p>
+      <div className="mt-5 flex items-center justify-center">
+        <span
+          className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-700"
+          title={`이 토픽의 누적: Major ${versionCounts.major}, Minor ${versionCounts.minor}, Patch ${versionCounts.patch}`}
+        >
+          {versionLabel}
+        </span>
+      </div>
 
       {majorInputMode ? (
         <div className="mt-6 space-y-4">

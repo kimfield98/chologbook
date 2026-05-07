@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { patchTotalSummarySentence } from "@/lib/chologbook/patchTotalSummary";
-import { getLogType, getLogsByTopic } from "@/lib/chologbook/logs";
+import { getLogsByTopic } from "@/lib/chologbook/logs";
+import {
+  countTopicVersion,
+  topicVersionLabelFromLogs,
+} from "@/lib/chologbook/topicVersion";
 import type { Log, Topic } from "@/lib/chologbook/types";
 
 type TopicCardProps = {
@@ -24,10 +27,11 @@ export function TopicCard({
     [allLogs, topic.id],
   );
 
-  const patchLogs = useMemo(
-    () => topicLogs.filter((l) => getLogType(l) === "patch"),
+  const versionLabel = useMemo(
+    () => topicVersionLabelFromLogs(topicLogs),
     [topicLogs],
   );
+  const versionCounts = useMemo(() => countTopicVersion(topicLogs), [topicLogs]);
 
   const isCurrentFocus =
     focusVisualId !== undefined && topic.id === focusVisualId;
@@ -43,13 +47,20 @@ export function TopicCard({
             : "border border-zinc-200 bg-zinc-50/50 hover:border-emerald-200 hover:bg-emerald-50/30"
         }`}
       >
-        <span className="truncate font-medium text-zinc-900">{topic.title}</span>
+        <div className="flex items-center justify-between gap-3">
+          <span className="min-w-0 flex-1 truncate font-medium text-zinc-900">
+            {topic.title}
+          </span>
+          <span
+            className="shrink-0 inline-flex items-center rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-zinc-700"
+            title={`이 토픽의 누적: Major ${versionCounts.major}, Minor ${versionCounts.minor}, Patch ${versionCounts.patch}`}
+          >
+            {versionLabel}
+          </span>
+        </div>
         {isCurrentFocus ? (
           <p className="text-xs font-medium text-emerald-700">🌱 현재 집중</p>
         ) : null}
-        <span className="text-xs leading-snug text-zinc-500">
-          {patchTotalSummarySentence(patchLogs.length)}
-        </span>
       </button>
     </li>
   );

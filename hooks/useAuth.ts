@@ -82,13 +82,10 @@ export function useAuth() {
     }
   }, []);
 
-  const isAnonymous = user?.isAnonymous ?? false;
-
   return {
     user,
     userId: user?.uid,
     isLoading,
-    isAnonymous,
     isGooglePopupPending,
     signInWithGoogle,
   };
