@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { sortLogsNewestFirst } from "@/lib/chologbook/date-logic";
 import { patchTotalSummarySentence } from "@/lib/chologbook/patchTotalSummary";
 import { getLogType, getLogsByTopic } from "@/lib/chologbook/logs";
 import type { Log, Topic } from "@/lib/chologbook/types";
@@ -30,11 +29,6 @@ export function TopicCard({
     [topicLogs],
   );
 
-  const previewLog = useMemo(
-    () => sortLogsNewestFirst(topicLogs)[0],
-    [topicLogs],
-  );
-
   const isCurrentFocus =
     focusVisualId !== undefined && topic.id === focusVisualId;
 
@@ -56,9 +50,6 @@ export function TopicCard({
         <span className="text-xs leading-snug text-zinc-500">
           {patchTotalSummarySentence(patchLogs.length)}
         </span>
-        {previewLog ? (
-          <span className="truncate text-xs text-zinc-500">→ {previewLog.text}</span>
-        ) : null}
       </button>
     </li>
   );
