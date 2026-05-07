@@ -1,6 +1,7 @@
 import { FirebaseError } from "firebase/app";
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   serverTimestamp,
@@ -70,4 +71,23 @@ export async function addTopicToFirestore(
     }
     throw e;
   }
+}
+
+export async function deleteTopicFromFirestore(
+  userId: string,
+  topicId: string,
+): Promise<void> {
+  const db = ensureDb();
+  if (!db) {
+    throw new Error("Firestore가 초기화되지 않았습니다. .env.local을 확인하세요.");
+  }
+  if (!userId.trim()) {
+    throw new Error("userId 없이 Firestore에서 Topic을 삭제할 수 없습니다.");
+  }
+  if (!topicId.trim()) {
+    throw new Error("topicId 없이 Firestore에서 Topic을 삭제할 수 없습니다.");
+  }
+
+  const ref = doc(db, "users", userId, "topics", topicId);
+  await deleteDoc(ref);
 }

@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addTopicToFirestore, getTopicsFromFirestore } from "@/lib/chologbook/firestoreTopics";
+import {
+  addTopicToFirestore,
+  deleteTopicFromFirestore,
+  getTopicsFromFirestore,
+} from "@/lib/chologbook/firestoreTopics";
 import { newTopicId } from "@/lib/chologbook/id";
 import { INITIAL_TOPICS } from "@/lib/chologbook/migrate";
 import { mergeRemoteTopicsWithLogs } from "@/lib/chologbook/mergeTopicsWithLogs";
@@ -94,6 +98,27 @@ export function useTopics({ userId, logs }: UseTopicsOptions) {
     [firebaseOn, userId],
   );
 
+  const deleteTopic = useCallback(
+    (topicId: string) => {
+      if (!topicId.trim()) return;
+
+      if (!firebaseOn) {
+        setLocalModeTopics((prev) => prev.filter((t) => t.id !== topicId));
+      } else if (userId?.trim()) {
+        setRemoteTopics((prev) => prev.filter((t) => t.id !== topicId));
+        void deleteTopicFromFirestore(userId, topicId).catch(() => {
+          // 실패 시에는 다음 로드에서 복구될 수 있도록 조용히 둔다.
+        });
+      } else {
+        setLocalModeTopics((prev) => prev.filter((t) => t.id !== topicId));
+      }
+
+      setSelectedTopicId((prev) => (prev === topicId ? null : prev));
+      setLastFocusRaw((prev) => (prev === topicId ? null : prev));
+    },
+    [firebaseOn, userId],
+  );
+
   return {
     topics,
     selectedTopicId,
@@ -103,6 +128,7 @@ export function useTopics({ userId, logs }: UseTopicsOptions) {
     selectTopic,
     goHome,
     createTopic,
+    deleteTopic,
   };
 }
 

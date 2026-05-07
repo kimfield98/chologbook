@@ -7,6 +7,8 @@ import type { Log } from "@/lib/chologbook/types";
 
 export type TopicDetailProps = {
   onHome: () => void;
+  onDeleteTopic: () => void;
+  canWrite: boolean;
   title: string;
   totalPatchCount: number;
   sortedLogs: Log[];
@@ -43,6 +45,8 @@ export type TopicDetailProps = {
 
 export function TopicDetail({
   onHome,
+  onDeleteTopic,
+  canWrite,
   title,
   totalPatchCount,
   sortedLogs,
@@ -93,6 +97,15 @@ export function TopicDetail({
         >
           ← 홈
         </button>
+        {canWrite ? (
+          <button
+            type="button"
+            onClick={onDeleteTopic}
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-sm font-semibold text-red-800 transition hover:bg-red-100"
+          >
+            삭제
+          </button>
+        ) : null}
       </div>
       <p className="text-center text-xs font-medium uppercase tracking-widest text-emerald-600/90">
         {majorInputMode ? "CHOLOGBOOK · Major" : "CHOLOGBOOK · Patch"}

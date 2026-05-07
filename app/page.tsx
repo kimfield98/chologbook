@@ -323,6 +323,18 @@ export default function Home() {
         ) : patch.selectedTopic ? (
           <TopicDetail
             onHome={topicsApi.goHome}
+            onDeleteTopic={() => {
+              if (!canWrite || !topicsApi.selectedTopicId) return;
+              const ok = window.confirm(
+                "이 Topic을 삭제할까요?\n해당 Topic의 모든 기록(Patch/Minor/Major)도 함께 삭제됩니다.",
+              );
+              if (!ok) return;
+              const id = topicsApi.selectedTopicId;
+              topicsApi.goHome();
+              topicsApi.deleteTopic(id);
+              logsApi.clearLogsForTopic(id);
+            }}
+            canWrite={canWrite}
             title={patch.selectedTopic.title}
             totalPatchCount={patch.totalPatchCount}
             sortedLogs={patch.sortedLogs}
