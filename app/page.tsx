@@ -3,11 +3,9 @@
 import { useMemo, useState } from "react";
 import { TopicDetail } from "@/components/chologbook/TopicDetail";
 import { TopicList } from "@/components/chologbook/TopicList";
-import { TestPanel } from "@/components/chologbook/TestPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogs } from "@/hooks/useLogs";
 import { usePatch } from "@/hooks/usePatch";
-import { useTestMode } from "@/hooks/useTestMode";
 import { useTopics } from "@/hooks/useTopics";
 import { getFocusTopicId } from "@/lib/chologbook/getFocusTopicId";
 import { debugLog } from "@/lib/debugLog";
@@ -32,16 +30,6 @@ export default function Home() {
     selectedTopicId: topicsApi.selectedTopicId,
     logs: logsApi.logs,
     addLog: logsApi.addLog,
-  });
-
-  const test = useTestMode({
-    topics: topicsApi.topics,
-    selectedTopicId: topicsApi.selectedTopicId,
-    logs: logsApi.logs,
-    todayKey: patch.todayKey,
-    addLog: logsApi.addLog,
-    clearLogsForTopic: logsApi.clearLogsForTopic,
-    replaceLogsForTopic: logsApi.replaceLogsForTopic,
   });
 
   const [newTopicOpen, setNewTopicOpen] = useState(false);
@@ -307,21 +295,6 @@ export default function Home() {
           />
         ) : null}
       </main>
-
-      <TestPanel
-        isTestMode={test.isTestMode}
-        setIsTestMode={test.setIsTestMode}
-        testPanelOpen={test.testPanelOpen}
-        setTestPanelOpen={test.setTestPanelOpen}
-        selectedTopicId={topicsApi.selectedTopicId}
-        selectedTopic={test.selectedTopic}
-        topicLogs={test.topicLogs}
-        todayKey={patch.todayKey}
-        onTestAddToday={test.testAddTodayLog}
-        onTestAddPastDay={test.testAddPastDay}
-        onTestForceMinor={test.testForceMinor}
-        onTestReset={test.testResetLogs}
-      />
     </div>
   );
 }
