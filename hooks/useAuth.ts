@@ -46,23 +46,16 @@ export function useAuth() {
 
     const unsub = onAuthStateChanged(a, async (nextUser) => {
       if (nextUser) {
-        console.log("[useAuth] Firebase uid 확정", {
-          uid: nextUser.uid,
-          isAnonymous: nextUser.isAnonymous,
-          email: nextUser.email,
-        });
         setUser(nextUser);
         setIsLoading(false);
         return;
       }
 
       if (googlePopupPendingRef.current) {
-        console.log("[useAuth] Google 팝업 진행 중 — 익명 자동 로그인 스킵");
         return;
       }
 
       try {
-        console.log("[useAuth] 익명 로그인 시도 (기존 세션 없음)");
         await signInAnonymously(a);
       } catch (e) {
         console.error("[useAuth] 익명 로그인 실패", e);
@@ -76,7 +69,6 @@ export function useAuth() {
 
   const signInWithGoogle = useCallback(async () => {
     if (!isFirebaseConfigured()) {
-      console.warn("[useAuth] Firebase 미설정 — Google 로그인 불가");
       return;
     }
 
@@ -92,7 +84,6 @@ export function useAuth() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(a, provider);
-      console.log("[useAuth] Google 로그인 완료 (새 uid 기준 데이터)");
     } catch (e) {
       console.error("[useAuth] Google 로그인 실패", e);
     } finally {

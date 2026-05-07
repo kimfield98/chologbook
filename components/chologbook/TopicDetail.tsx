@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { patchTotalSummarySentence } from "@/lib/chologbook/patchTotalSummary";
 import { getLogType } from "@/lib/chologbook/logs";
 import type { Log } from "@/lib/chologbook/types";
@@ -78,10 +78,7 @@ export function TopicDetail({
 }: TopicDetailProps) {
   const minorSaveDisabled = !minorDraftText.trim();
   const [referenceOpen, setReferenceOpen] = useState(true);
-
-  useEffect(() => {
-    if (majorInputMode) setReferenceOpen(true);
-  }, [majorInputMode]);
+  const referenceOpenEffective = majorInputMode ? true : referenceOpen;
 
   return (
     <section
@@ -168,13 +165,15 @@ export function TopicDetail({
             <button
               type="button"
               onClick={() => setReferenceOpen((o) => !o)}
-              aria-expanded={referenceOpen}
+              aria-expanded={referenceOpenEffective}
               className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-zinc-800"
             >
               <span>Patch · Minor 참고</span>
-              <span className="text-zinc-500">{referenceOpen ? "접기" : "펼치기"}</span>
+              <span className="text-zinc-500">
+                {referenceOpenEffective ? "접기" : "펼치기"}
+              </span>
             </button>
-            {referenceOpen ? (
+            {referenceOpenEffective ? (
               <ul className="max-h-48 space-y-1.5 overflow-y-auto border-t border-zinc-200 px-3 py-2 text-xs text-zinc-600">
                 {referenceLogsPatchMinor.length === 0 ? (
                   <li className="py-2 text-zinc-500">참고할 Patch/Minor가 없습니다.</li>

@@ -77,11 +77,6 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     return topicLogsSorted.slice(lastMajorIndex + 1);
   }, [topicLogsSorted, lastMajorIndex]);
 
-  const patchLogs = useMemo(
-    () => currentLogs.filter((l) => getLogType(l) === "patch"),
-    [currentLogs],
-  );
-
   const totalPatchCount = useMemo(
     () => topicLogs.filter((l) => getLogType(l) === "patch").length,
     [topicLogs],
@@ -312,29 +307,10 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   ]);
 
   const handlePatch = useCallback(async () => {
-    console.log("[handlePatch] 실행됨", {
-      patchDisabled,
-      selectedTopicId,
-      todayKey,
-      currentLogsLen: currentLogs.length,
-    });
-
     if (!selectedTopicId || !selectedTopic || patchDisabled) {
-      console.log("[handlePatch] 조기 종료", {
-        reason: !selectedTopicId
-          ? "no selectedTopicId"
-          : !selectedTopic
-            ? "no selectedTopic"
-            : "patchDisabled",
-        patchDisabled,
-        todayKey,
-      });
       return;
     }
     if (hasLogForDate(currentLogs, todayKey)) {
-      console.log("[handlePatch] 조기 종료: 이미 해당 날짜 Patch 있음", {
-        todayKey,
-      });
       return;
     }
     const entry: LogInput = {

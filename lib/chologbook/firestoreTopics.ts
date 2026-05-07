@@ -38,15 +38,8 @@ export async function getTopicsFromFirestore(userId: string): Promise<Topic[]> {
     return rows;
   } catch (e) {
     if (e instanceof FirebaseError && e.code === "permission-denied") {
-      console.warn(
-        "[firestoreTopics] users/{uid}/topics 읽기가 규칙에 막혔습니다. 규칙 예: match /users/{userId}/topics/{topicId} { allow read, write: if request.auth != null && request.auth.uid == userId; }",
-      );
       return [];
     }
-    console.warn(
-      "[firestoreTopics] getTopicsFromFirestore 실패 — 토픽 목록 없이 진행합니다.",
-      e,
-    );
     return [];
   }
 }
@@ -73,9 +66,6 @@ export async function addTopicToFirestore(
     });
   } catch (e) {
     if (e instanceof FirebaseError && e.code === "permission-denied") {
-      console.warn(
-        "[firestoreTopics] users/{uid}/topics 쓰기가 규칙에 막혔습니다. 위와 동일 블록에서 write를 허용해 주세요.",
-      );
     } else {
       console.error("[firestoreTopics] addTopicToFirestore failed", e);
     }

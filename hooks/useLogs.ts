@@ -53,7 +53,6 @@ export function useLogs({ userId }: UseLogsOptions) {
 
     void (async () => {
       try {
-        console.log("[useLogs] Firestore 로드 userId", userId);
         const remote = await getLogsFromFirestore(userId);
         setLogs(remote);
         logsRef.current = remote;
@@ -74,10 +73,7 @@ export function useLogs({ userId }: UseLogsOptions) {
    */
   const addLog = useCallback(
     async (topicId: string, entry: LogInput) => {
-      console.log("[addLog] 호출됨", { topicId, entry, userId });
-
       if (!userId?.trim()) {
-        console.warn("[useLogs:addLog] userId 없음 — 생성·저장 금지");
         return;
       }
 
@@ -90,15 +86,10 @@ export function useLogs({ userId }: UseLogsOptions) {
           (l) => getLogType(l) === "patch" && l.date === entry.date,
         )
       ) {
-        console.log("[useLogs:addLog] Patch 중복 날짜 — 스킵", {
-          topicId,
-          date: entry.date,
-        });
         return;
       }
 
       const newLog = stampLog(userId, topicId, entry);
-      console.log("[useLogs:addLog] newLog 생성됨", newLog);
 
       setLogs((p) => {
         const ft = getLogsByTopic(p, topicId);
@@ -114,15 +105,12 @@ export function useLogs({ userId }: UseLogsOptions) {
       logsRef.current = [...prev, newLog];
 
       if (!isFirebaseConfigured()) {
-        console.log("[useLogs:addLog] Firebase 미설정 — Firestore 스킵");
         return;
       }
 
       try {
         initFirebase();
-        console.log("[useLogs:addLog] addLogToFirestore 호출", newLog.id);
         await addLogToFirestore(newLog);
-        console.log("[useLogs:addLog] Firestore 저장 완료", newLog.id);
         debugLog("useLogs: Firestore 저장 완료", { id: newLog.id });
       } catch (e) {
         console.error("[useLogs] addLog Firestore 저장 실패", e);
@@ -134,7 +122,6 @@ export function useLogs({ userId }: UseLogsOptions) {
   const clearLogsForTopic = useCallback(
     (topicId: string) => {
       if (!userId?.trim()) {
-        console.warn("[useLogs:clearLogsForTopic] userId 없음 — 스킵");
         return;
       }
 
@@ -158,7 +145,6 @@ export function useLogs({ userId }: UseLogsOptions) {
   const replaceLogsForTopic = useCallback(
     (topicId: string, entries: LogInput[]) => {
       if (!userId?.trim()) {
-        console.warn("[useLogs:replaceLogsForTopic] userId 없음 — 스킵");
         return;
       }
 

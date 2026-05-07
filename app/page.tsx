@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { TopicDetail } from "@/components/chologbook/TopicDetail";
 import { TopicList } from "@/components/chologbook/TopicList";
 import { TestPanel } from "@/components/chologbook/TestPanel";
@@ -47,7 +47,12 @@ export default function Home() {
   const [newTopicOpen, setNewTopicOpen] = useState(false);
   const [newTopicName, setNewTopicName] = useState("");
   const [installGuideOpen, setInstallGuideOpen] = useState(false);
-  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const dismissed =
+      window.localStorage.getItem(INSTALL_GUIDE_DISMISSED_KEY) === "1";
+    return !dismissed;
+  });
 
   const focusVisualId = useMemo(
     () =>
@@ -59,12 +64,6 @@ export default function Home() {
   );
 
   const isHome = topicsApi.selectedTopicId === null;
-
-  useEffect(() => {
-    const dismissed =
-      window.localStorage.getItem(INSTALL_GUIDE_DISMISSED_KEY) === "1";
-    setShowInstallGuide(!dismissed);
-  }, []);
 
   if (authSession.isLoading) {
     return (

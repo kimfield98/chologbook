@@ -30,12 +30,6 @@ export async function addLogToFirestore(log: Log): Promise<void> {
     throw new Error("userId 없이 Firestore에 저장할 수 없습니다.");
   }
 
-  console.log("[firestoreLogs] addLogToFirestore userId 포함", {
-    userId: log.userId,
-    topicId: log.topicId,
-    id: log.id,
-  });
-
   try {
     const ref = doc(db, "logs", log.id);
     const payload = {
@@ -62,11 +56,8 @@ export async function getLogsFromFirestore(userId: string): Promise<Log[]> {
   }
 
   if (!userId.trim()) {
-    console.warn("[firestoreLogs] getLogsFromFirestore: userId 없음 — 빈 배열");
     return [];
   }
-
-  console.log("[firestoreLogs] getLogsFromFirestore 쿼리", { userId });
 
   try {
     const q = query(collection(db, "logs"), where("userId", "==", userId));
