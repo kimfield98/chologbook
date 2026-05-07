@@ -4,22 +4,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
-  signInAnonymously,
   signInWithPopup,
   type User,
 } from "firebase/auth";
 import { auth, initFirebase, isFirebaseConfigured } from "@/lib/firebase";
 
 /**
- * Firebase 익명 인증(기본) + 선택적 Google 로그인.
- * Google 로그인 시 새 uid로 전환되며(데이터 분리), onAuthStateChanged로 user 동기화.
+ * Firebase Google 로그인(선택) 기반.
+ * 익명 로그인은 사용하지 않는다.
  */
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   /** Firebase 사용 시 Auth 완료 전까지 true (SSR/클라이언트 동일하게 env 기준) */
   const [isLoading, setIsLoading] = useState(() => isFirebaseConfigured());
   const [isGooglePopupPending, setIsGooglePopupPending] = useState(false);
-  /** Google 팝업 진행 중 null 이벤트 시 익명 자동 로그인이 끼어들지 않도록 */
   const googlePopupPendingRef = useRef(false);
 
   useEffect(() => {
@@ -36,7 +34,6 @@ export function useAuth() {
     initFirebase();
     const a = auth;
     if (!a) {
-      console.error("[useAuth] auth 초기화 실패");
       queueMicrotask(() => {
         setUser(null);
         setIsLoading(false);
@@ -55,13 +52,8 @@ export function useAuth() {
         return;
       }
 
-      try {
-        await signInAnonymously(a);
-      } catch (e) {
-        console.error("[useAuth] 익명 로그인 실패", e);
-        setUser(null);
-        setIsLoading(false);
-      }
+      setUser(null);
+      setIsLoading(false);
     });
 
     return () => unsub();
@@ -75,7 +67,6 @@ export function useAuth() {
     initFirebase();
     const a = auth;
     if (!a) {
-      console.error("[useAuth] Google 로그인: auth 없음");
       return;
     }
 
@@ -84,8 +75,7 @@ export function useAuth() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(a, provider);
-    } catch (e) {
-      console.error("[useAuth] Google 로그인 실패", e);
+    } catch {
     } finally {
       googlePopupPendingRef.current = false;
       setIsGooglePopupPending(false);

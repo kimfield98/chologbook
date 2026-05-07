@@ -21,13 +21,21 @@ import type { Topic } from "@/lib/chologbook/types";
 import { debugLog } from "@/lib/debugLog";
 
 type PatchInput = Pick<TopicsApi, "topics" | "selectedTopicId"> &
-  Pick<LogsApi, "logs" | "addLog">;
+  Pick<LogsApi, "logs" | "addLog"> & {
+    canWrite: boolean;
+  };
 
 /**
  * Patch UI·Minor(명시적 진입)·Major 정리·오늘 키·피드백.
  * 선택 Topic의 로그는 전역 `logs`에서 topicId로 필터한 파생값만 사용한다.
  */
-export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) {
+export function usePatch({
+  topics,
+  selectedTopicId,
+  logs,
+  addLog,
+  canWrite,
+}: PatchInput) {
   const [todayKey, setTodayKey] = useState("");
   useEffect(() => {
     queueMicrotask(() => {
@@ -124,7 +132,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   );
 
   const canStartMajor =
-    Boolean(selectedTopicId) && majorAvailability.canOpen;
+    canWrite && Boolean(selectedTopicId) && majorAvailability.canOpen;
 
   const alreadyPatchedToday = useMemo(
     () => todayKey !== "" && hasLogForDate(currentLogs, todayKey),
@@ -133,11 +141,12 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
 
   const patchDisabled = useMemo(
     () =>
+      !canWrite ||
       todayKey === "" ||
       alreadyPatchedToday ||
       !selectedTopicId ||
       majorInputMode,
-    [todayKey, alreadyPatchedToday, selectedTopicId, majorInputMode],
+    [canWrite, todayKey, alreadyPatchedToday, selectedTopicId, majorInputMode],
   );
 
   /** 토픽 전체 기준 — 같은 날 Minor는 한 번만 */
@@ -148,11 +157,12 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
 
   const minorOpenDisabled = useMemo(
     () =>
+      !canWrite ||
       todayKey === "" ||
       !selectedTopicId ||
       majorInputMode ||
       alreadyMinoredToday,
-    [todayKey, selectedTopicId, majorInputMode, alreadyMinoredToday],
+    [canWrite, todayKey, selectedTopicId, majorInputMode, alreadyMinoredToday],
   );
 
   useEffect(() => {
@@ -192,6 +202,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
 
   const handleOpenMinorInput = useCallback(() => {
     if (
+      !canWrite ||
       !selectedTopicId ||
       !todayKey ||
       majorInputMode ||
@@ -201,7 +212,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     }
     setMinorInputMode(true);
     setMinorDraftText("");
-  }, [selectedTopicId, todayKey, majorInputMode, topicLogs]);
+  }, [canWrite, selectedTopicId, todayKey, majorInputMode, topicLogs]);
 
   const handleCancelMinor = useCallback(() => {
     setMinorInputMode(false);
@@ -210,6 +221,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
 
   const handleSaveMinor = useCallback(async () => {
     const text = minorDraftText.trim();
+    if (!canWrite) return;
     if (!selectedTopicId || !selectedTopic || !todayKey || !text) return;
     if (hasMinorForDate(topicLogs, todayKey)) {
       debugLog("minor:reject-duplicate-day", {
@@ -228,6 +240,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     setMinorDraftText("");
     debugLog("minor:saved", { topicId: selectedTopicId, date: todayKey });
   }, [
+    canWrite,
     selectedTopicId,
     selectedTopic,
     todayKey,
@@ -237,13 +250,13 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   ]);
 
   const handleOpenMajorComposer = useCallback(() => {
-    if (!selectedTopicId || !majorAvailability.canOpen) return;
+    if (!canWrite || !selectedTopicId || !majorAvailability.canOpen) return;
     setMinorInputMode(false);
     setMajorDraftChange("");
     setMajorDraftMoment("");
     setMajorDraftNext("");
     setMajorInputMode(true);
-  }, [selectedTopicId, majorAvailability.canOpen]);
+  }, [canWrite, selectedTopicId, majorAvailability.canOpen]);
 
   const handleCancelMajor = useCallback(() => {
     setMajorInputMode(false);
@@ -259,6 +272,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     !todayKey;
 
   const handleSaveMajor = useCallback(async () => {
+    if (!canWrite) return;
     if (
       !selectedTopicId ||
       !selectedTopic ||
@@ -295,6 +309,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
     setMajorDraftNext("");
     debugLog("major:saved", { topicId: selectedTopicId, date: todayKey });
   }, [
+    canWrite,
     selectedTopicId,
     selectedTopic,
     todayKey,
@@ -307,6 +322,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
   ]);
 
   const handlePatch = useCallback(async () => {
+    if (!canWrite) return;
     if (!selectedTopicId || !selectedTopic || patchDisabled) {
       return;
     }
@@ -328,6 +344,7 @@ export function usePatch({ topics, selectedTopicId, logs, addLog }: PatchInput) 
       nextTotalPatchCount,
     });
   }, [
+    canWrite,
     selectedTopicId,
     selectedTopic,
     patchDisabled,

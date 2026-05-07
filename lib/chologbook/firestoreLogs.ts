@@ -43,7 +43,6 @@ export async function addLogToFirestore(log: Log): Promise<void> {
     };
     await setDoc(ref, payload);
   } catch (e) {
-    console.error("[firestoreLogs] addLogToFirestore failed", e);
     throw e;
   }
 }
@@ -103,7 +102,6 @@ export async function getLogsFromFirestore(userId: string): Promise<Log[]> {
       return log;
     });
   } catch (e) {
-    console.error("[firestoreLogs] getLogsFromFirestore failed", e);
     throw e;
   }
 }
@@ -131,7 +129,6 @@ export async function clearLogsByTopic(
     const snap = await getDocs(q);
     await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
   } catch (e) {
-    console.error("[firestoreLogs] clearLogsByTopic failed", e);
     throw e;
   }
 }

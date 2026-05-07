@@ -67,7 +67,6 @@ export async function addTopicToFirestore(
   } catch (e) {
     if (e instanceof FirebaseError && e.code === "permission-denied") {
     } else {
-      console.error("[firestoreTopics] addTopicToFirestore failed", e);
     }
     throw e;
   }

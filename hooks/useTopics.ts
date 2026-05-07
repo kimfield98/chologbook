@@ -81,8 +81,7 @@ export function useTopics({ userId, logs }: UseTopicsOptions) {
         setLocalModeTopics((prev) => [...prev, topic]);
       } else if (userId?.trim()) {
         setRemoteTopics((prev) => [...prev, topic]);
-        void addTopicToFirestore(userId, topic).catch((e) => {
-          console.error("[useTopics] Topic Firestore 저장 실패", e);
+        void addTopicToFirestore(userId, topic).catch(() => {
           setRemoteTopics((prev) => prev.filter((t) => t.id !== topic.id));
         });
       } else {

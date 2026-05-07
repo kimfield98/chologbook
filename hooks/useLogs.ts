@@ -60,8 +60,7 @@ export function useLogs({ userId }: UseLogsOptions) {
           userId,
           count: remote.length,
         });
-      } catch (e) {
-        console.error("[useLogs] Firestore 로드 실패", e);
+      } catch {
         setLogs([]);
         logsRef.current = [];
       }
@@ -112,8 +111,8 @@ export function useLogs({ userId }: UseLogsOptions) {
         initFirebase();
         await addLogToFirestore(newLog);
         debugLog("useLogs: Firestore 저장 완료", { id: newLog.id });
-      } catch (e) {
-        console.error("[useLogs] addLog Firestore 저장 실패", e);
+      } catch {
+        // Firestore 실패는 UI는 유지하고, 콘솔은 조용히 둔다.
       }
     },
     [userId],
@@ -134,8 +133,8 @@ export function useLogs({ userId }: UseLogsOptions) {
           initFirebase();
           await clearLogsByTopicInFirestore(userId, topicId);
           debugLog("useLogs: Firestore topic 로그 삭제", { userId, topicId });
-        } catch (e) {
-          console.error("[useLogs] clearLogs Firestore 실패", e);
+        } catch {
+          // Firestore 실패는 UI는 유지하고, 콘솔은 조용히 둔다.
         }
       })();
     },
@@ -169,8 +168,8 @@ export function useLogs({ userId }: UseLogsOptions) {
             topicId,
             count: added.length,
           });
-        } catch (e) {
-          console.error("[useLogs] replaceLogs Firestore 실패", e);
+        } catch {
+          // Firestore 실패는 UI는 유지하고, 콘솔은 조용히 둔다.
         }
       })();
     },

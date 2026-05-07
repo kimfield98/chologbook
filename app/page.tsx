@@ -8,20 +8,31 @@ import { useLogs } from "@/hooks/useLogs";
 import { usePatch } from "@/hooks/usePatch";
 import { useTopics } from "@/hooks/useTopics";
 import { getFocusTopicId } from "@/lib/chologbook/getFocusTopicId";
+import { PUBLIC_OWNER_LABEL, PUBLIC_OWNER_UID } from "@/lib/chologbook/publicOwner";
 import { debugLog } from "@/lib/debugLog";
 import { isFirebaseConfigured } from "@/lib/firebase";
 
 const INSTALL_GUIDE_DISMISSED_KEY = "chologbook.installGuideDismissed";
 
 /**
- * 페이지: Topic(useTopics) + 전역 Log(useLogs) + Patch·테스트 훅 조합.
+ * 페이지: Topic(useTopics) + 전역 Log(useLogs) + Patch 훅 조합.
  * 로그의 단일 소스는 `logs` 배열이며, Topic은 그룹(id/title)만 담당한다.
  */
 export default function Home() {
   const authSession = useAuth();
-  const logsApi = useLogs({ userId: authSession.userId });
+
+  const [viewMode, setViewMode] = useState<"public" | "mine">("public");
+  const effectiveViewMode = authSession.userId ? viewMode : "public";
+  const dataUserId =
+    effectiveViewMode === "public"
+      ? PUBLIC_OWNER_UID
+      : (authSession.userId ?? PUBLIC_OWNER_UID);
+
+  const canWrite = Boolean(authSession.userId) && effectiveViewMode === "mine";
+
+  const logsApi = useLogs({ userId: dataUserId });
   const topicsApi = useTopics({
-    userId: authSession.userId,
+    userId: dataUserId,
     logs: logsApi.logs,
   });
 
@@ -30,6 +41,7 @@ export default function Home() {
     selectedTopicId: topicsApi.selectedTopicId,
     logs: logsApi.logs,
     addLog: logsApi.addLog,
+    canWrite,
   });
 
   const [newTopicOpen, setNewTopicOpen] = useState(false);
@@ -62,12 +74,14 @@ export default function Home() {
   }
 
   function handleOpenNewTopicPanel() {
+    if (!canWrite) return;
     debugLog("Topic 버튼 클릭됨", "인라인 입력 패널 오픈");
     setNewTopicName("");
     setNewTopicOpen(true);
   }
 
   function handleCreateNewTopic() {
+    if (!canWrite) return;
     debugLog("Topic 추가 확인(저장 또는 Enter)", { raw: newTopicName });
     if (!newTopicName.trim()) {
       debugLog("[케이스] 이름 비어 있음 — Topic 미생성");
@@ -91,7 +105,7 @@ export default function Home() {
     <div className="relative flex min-h-full flex-1 flex-col items-center justify-center bg-zinc-50 px-4 py-12 text-zinc-900">
       {showAccountBar ? (
         <div className="absolute right-4 top-4 flex max-w-[min(100%,20rem)] flex-col items-end gap-1 sm:right-6 sm:top-6">
-          {authSession.user && !authSession.isAnonymous ? (
+          {authSession.user ? (
             <span
               className="truncate text-right text-xs font-medium text-zinc-600"
               title={authSession.user.email ?? authSession.userId}
@@ -100,11 +114,6 @@ export default function Home() {
             </span>
           ) : (
             <>
-              {authSession.user && authSession.isAnonymous ? (
-                <p className="max-w-[16rem] text-right text-sm leading-snug text-gray-500">
-                  Google로 로그인하면 기록이 계정 기준으로 새롭게 저장됩니다.
-                </p>
-              ) : null}
               <button
                 type="button"
                 onClick={() => void authSession.signInWithGoogle()}
@@ -121,6 +130,54 @@ export default function Home() {
       ) : null}
 
       <main className="w-full max-w-md">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setViewMode("public")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                effectiveViewMode === "public"
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-700 hover:bg-zinc-100"
+              }`}
+            >
+              {PUBLIC_OWNER_LABEL}
+            </button>
+            {authSession.userId ? (
+              <button
+                type="button"
+                onClick={() => setViewMode("mine")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  effectiveViewMode === "mine"
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-700 hover:bg-zinc-100"
+                }`}
+              >
+                내 초록북
+              </button>
+            ) : null}
+          </div>
+
+          {!authSession.userId ? (
+            <button
+              type="button"
+              onClick={() => void authSession.signInWithGoogle()}
+              disabled={authSession.isGooglePopupPending}
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition enabled:hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+            >
+              {authSession.isGooglePopupPending
+                ? "연결 중…"
+                : "나도 시작해보기"}
+            </button>
+          ) : null}
+        </div>
+
+        {effectiveViewMode === "public" ? (
+          <p className="mb-3 text-center text-xs text-zinc-500">
+            운영자의 실제 흐름을 공개로 보여드려요. (읽기 전용)
+          </p>
+        ) : null}
+
         {isHome ? (
           <section className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm ring-1 ring-zinc-100">
             <p className="text-center text-xs font-medium uppercase tracking-widest text-emerald-600/90">
@@ -129,16 +186,22 @@ export default function Home() {
             <h1 className="mt-2 text-center text-2xl font-semibold tracking-tight text-zinc-900">
               Topics
             </h1>
-            <button
-              type="button"
-              onClick={() => {
-                debugLog("[케이스1] +Topic 버튼 클릭됨");
-                handleOpenNewTopicPanel();
-              }}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 px-4 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50"
-            >
-              + Topic 추가
-            </button>
+            {canWrite ? (
+              <button
+                type="button"
+                onClick={() => {
+                  debugLog("[케이스1] +Topic 버튼 클릭됨");
+                  handleOpenNewTopicPanel();
+                }}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 px-4 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50"
+              >
+                + Topic 추가
+              </button>
+            ) : (
+              <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-center text-sm text-zinc-700">
+                기록은 로그인 후에만 가능해요.
+              </div>
+            )}
             {showInstallGuide ? (
               <section
                 aria-labelledby="install-guide-title"
