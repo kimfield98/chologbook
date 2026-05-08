@@ -5,7 +5,7 @@ import { useAppContext } from "@/app/app/AppContext";
 import { getLogType } from "@/lib/chologbook/logs";
 
 export default function MajorTabPage() {
-  const { patch, topicsApi, canWrite } = useAppContext();
+  const { patch, topicsApi, canWrite, effectiveViewMode } = useAppContext();
 
   const selected = topicsApi.selectedTopicId;
   const majorLogs = useMemo(
@@ -21,6 +21,36 @@ export default function MajorTabPage() {
     );
   }
 
+  const remainingMinorCount = (() => {
+    // majorProgressLabel: "x/y"
+    const raw = String(patch.majorProgressLabel ?? "");
+    const m = raw.match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
+    if (!m) return null;
+    const current = Number(m[1]);
+    const need = Number(m[2]);
+    if (!Number.isFinite(current) || !Number.isFinite(need)) return null;
+    return Math.max(0, need - current);
+  })();
+
+  const majorCtaLabel = (() => {
+    if (effectiveViewMode === "public") return "읽기 전용";
+    if (patch.todayKey === "") return "날짜 불러오는 중…";
+    if (!canWrite) return "로그인 후 작성할 수 있어요";
+    if (patch.canStartMajor) return "흐름 정리 시작하기";
+    if (typeof remainingMinorCount === "number") {
+      return remainingMinorCount <= 0
+        ? "흐름 정리 시작하기"
+        : `Minor 기록이 ${remainingMinorCount}개 더 필요해요`;
+    }
+    return patch.majorLockHint || "Minor 기록이 더 필요해요";
+  })();
+
+  const majorCtaDisabled =
+    effectiveViewMode === "public" ||
+    patch.todayKey === "" ||
+    !canWrite ||
+    !patch.canStartMajor;
+
   return (
     <section className="space-y-5">
       {!patch.majorInputMode ? (
@@ -31,19 +61,13 @@ export default function MajorTabPage() {
           <p className="mt-2 text-center text-sm leading-relaxed text-zinc-600">
             {patch.majorLockHint}
           </p>
-          <div className="mt-4 flex items-center justify-center gap-2 text-xs text-zinc-500">
-            <span>현재 구간 상태</span>
-            <span className="font-mono font-semibold text-zinc-800">
-              {patch.majorProgressLabel}
-            </span>
-          </div>
           <button
             type="button"
             onClick={patch.handleOpenMajorComposer}
-            disabled={!patch.canStartMajor || patch.todayKey === "" || !canWrite}
+            disabled={majorCtaDisabled}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white shadow-sm transition enabled:hover:bg-emerald-700 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
           >
-            흐름 정리 시작하기
+            {majorCtaLabel}
           </button>
         </div>
       ) : (
@@ -51,33 +75,33 @@ export default function MajorTabPage() {
           <p className="text-center text-sm font-semibold text-zinc-900">
             이 구간을 정리해요
           </p>
-          <div className="mt-4 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/40 p-3">
-            <label className="block text-xs font-semibold text-amber-900">
+          <div className="mt-4 space-y-3 rounded-2xl bg-amber-50/40 p-3">
+            <label className="block text-sm font-bold text-amber-950">
               이 구간에서 달라진 점
             </label>
             <textarea
               value={patch.majorDraftChange}
               onChange={(e) => patch.setMajorDraftChange(e.target.value)}
               rows={3}
-              className="w-full resize-y rounded-xl border border-amber-200/80 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-amber-500/20 focus:border-amber-400 focus:ring-2"
+              className="w-full resize-y rounded-xl bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-1 ring-amber-200/80 focus:ring-2 focus:ring-amber-500/25"
             />
-            <label className="block text-xs font-semibold text-amber-900">
+            <label className="block text-sm font-bold text-amber-950">
               가장 기억에 남는 순간
             </label>
             <textarea
               value={patch.majorDraftMoment}
               onChange={(e) => patch.setMajorDraftMoment(e.target.value)}
               rows={3}
-              className="w-full resize-y rounded-xl border border-amber-200/80 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-amber-500/20 focus:border-amber-400 focus:ring-2"
+              className="w-full resize-y rounded-xl bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-1 ring-amber-200/80 focus:ring-2 focus:ring-amber-500/25"
             />
-            <label className="block text-xs font-semibold text-amber-900">
+            <label className="block text-sm font-bold text-amber-950">
               다음 Patch 방향
             </label>
             <textarea
               value={patch.majorDraftNext}
               onChange={(e) => patch.setMajorDraftNext(e.target.value)}
               rows={2}
-              className="w-full resize-y rounded-xl border border-amber-200/80 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-amber-500/20 focus:border-amber-400 focus:ring-2"
+              className="w-full resize-y rounded-xl bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-1 ring-amber-200/80 focus:ring-2 focus:ring-amber-500/25"
             />
           </div>
 
@@ -92,7 +116,11 @@ export default function MajorTabPage() {
             <button
               type="button"
               onClick={patch.handleSaveMajor}
-              disabled={patch.majorSaveDisabled || !canWrite}
+              disabled={
+                effectiveViewMode === "public" ||
+                patch.majorSaveDisabled ||
+                !canWrite
+              }
               className="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm enabled:hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
             >
               저장
@@ -112,12 +140,10 @@ export default function MajorTabPage() {
             majorLogs.map((log) => (
               <li
                 key={log.id}
-                className="rounded-2xl border border-amber-200 bg-amber-50/40 px-3 py-3 text-zinc-800"
+                className="rounded-2xl bg-amber-50/40 px-3 py-3 text-zinc-800"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-amber-950">
-                    Major
-                  </span>
+                  <span className="text-sm font-bold text-zinc-900">Major</span>
                   <span className="font-mono text-[11px] text-amber-900/80">
                     {log.date}
                   </span>

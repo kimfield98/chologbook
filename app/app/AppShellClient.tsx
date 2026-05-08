@@ -139,8 +139,8 @@ export default function AppShellClient({ children }: { children: React.ReactNode
           </div>
         </header>
 
-        <div className="flex flex-1 flex-col px-4 pt-6 pb-32">
-          <div>
+        <div className="flex flex-1 flex-col px-4 pt-6 pb-32 overflow-hidden">
+          <div className="mb-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-zinc-900">
@@ -151,7 +151,7 @@ export default function AppShellClient({ children }: { children: React.ReactNode
                     ? "운영자 흐름을 보고 있어요."
                     : "내 흐름을 기록하고 있어요."}
                 </p>
-          </div>
+              </div>
 
               <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-1">
                 <button
@@ -181,8 +181,10 @@ export default function AppShellClient({ children }: { children: React.ReactNode
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-md my-auto">
-            {children}
+          <div className="mx-auto w-full max-w-md flex-1 overflow-y-auto">
+            <div className="min-h-full flex flex-col justify-center">
+              {children}
+            </div>
           </div>
         </div>
 

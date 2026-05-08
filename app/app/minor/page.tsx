@@ -5,7 +5,7 @@ import { useAppContext } from "@/app/app/AppContext";
 import { getLogType } from "@/lib/chologbook/logs";
 
 export default function MinorTabPage() {
-  const { patch, topicsApi, canWrite } = useAppContext();
+  const { patch, topicsApi, canWrite, effectiveViewMode } = useAppContext();
 
   const selected = topicsApi.selectedTopicId;
   const minorLogs = useMemo(
@@ -25,10 +25,12 @@ export default function MinorTabPage() {
     <section className="space-y-5">
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
         <p className="text-center text-xs text-zinc-500">
-          오늘 떠오른 생각을 한 줄로 남겨요.
+          {effectiveViewMode === "public"
+            ? "운영자 흐름은 읽기 전용이에요."
+            : "오늘 떠오른 생각을 한 줄로 남겨요."}
         </p>
 
-        {!patch.minorInputMode ? (
+        {effectiveViewMode === "public" ? null : !patch.minorInputMode ? (
           <div className="mt-4 space-y-2">
             <button
               type="button"
