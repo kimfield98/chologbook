@@ -52,6 +52,7 @@ export default function HomeClient({ initialShowInstallGuide }: HomeClientProps)
   const [showInstallGuide, setShowInstallGuide] = useState(
     initialShowInstallGuide,
   );
+  const [landingOpen, setLandingOpen] = useState(true);
 
   const focusVisualId = useMemo(
     () =>
@@ -187,8 +188,41 @@ export default function HomeClient({ initialShowInstallGuide }: HomeClientProps)
               CHOLOGBOOK
             </p>
             <h1 className="mt-2 text-center text-2xl font-semibold tracking-tight text-zinc-900">
-              지금 나의 흐름은?
+              오늘의 행동이 흐름이 되도록
             </h1>
+            <p className="mt-3 text-center text-sm leading-relaxed text-zinc-600">
+              초록북은{" "}
+              <span className="font-semibold text-zinc-900">
+                행동 → 생각 → 흐름
+              </span>
+              으로 이어지는 기록을 돕는 공간이에요.
+            </p>
+
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setLandingOpen(false)}
+                className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+              >
+                운영자 초록북 보기
+              </button>
+              {canWrite ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLandingOpen(false);
+                    handleOpenNewTopicPanel();
+                  }}
+                  className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-100/70"
+                >
+                  오늘의 행동 기록하기
+                </button>
+              ) : (
+                <p className="text-center text-xs text-zinc-500">
+                  기록은 로그인 후에 가능해요.
+                </p>
+              )}
+            </div>
             {canWrite ? (
               <button
                 type="button"
@@ -317,12 +351,19 @@ export default function HomeClient({ initialShowInstallGuide }: HomeClientProps)
               </div>
             ) : null}
 
-            <TopicList
-              topics={topicsApi.topics}
-              allLogs={logsApi.logs}
-              focusVisualId={focusVisualId}
-              onSelectTopic={topicsApi.selectTopic}
-            />
+            {!landingOpen ? (
+              <div className="mt-6">
+                <p className="mb-2 text-center text-xs font-medium uppercase tracking-wide text-zinc-400">
+                  Topics
+                </p>
+                <TopicList
+                  topics={topicsApi.topics}
+                  allLogs={logsApi.logs}
+                  focusVisualId={focusVisualId}
+                  onSelectTopic={topicsApi.selectTopic}
+                />
+              </div>
+            ) : null}
           </section>
         ) : patch.selectedTopic ? (
           <TopicDetail
