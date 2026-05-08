@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogs } from "@/hooks/useLogs";
 import { usePatch } from "@/hooks/usePatch";
@@ -11,7 +11,7 @@ import { PUBLIC_OWNER_LABEL, PUBLIC_OWNER_UID } from "@/lib/chologbook/publicOwn
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { AppProvider } from "./AppContext";
 
-type ViewMode = "public" | "mine";
+type ShellVariant = "app" | "tour";
 
 type TabLinkProps = {
   href: string;
@@ -38,21 +38,34 @@ function TabLink({
   );
 }
 
-export default function AppShellClient({ children }: { children: React.ReactNode }) {
+export default function AppShellClient({
+  children,
+  variant = "app",
+}: {
+  children: React.ReactNode;
+  variant?: ShellVariant;
+}) {
   const authSession = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
-  const [viewMode, setViewMode] = useState<ViewMode>("public");
-  const effectiveViewMode: ViewMode = authSession.userId ? viewMode : "public";
+  const effectiveViewMode = variant === "tour" ? ("public" as const) : ("mine" as const);
   const dataUserId =
-    effectiveViewMode === "public"
-      ? PUBLIC_OWNER_UID
-      : (authSession.userId ?? PUBLIC_OWNER_UID);
-  const canWrite = Boolean(authSession.userId) && effectiveViewMode === "mine";
+    variant === "tour" ? PUBLIC_OWNER_UID : (authSession.userId ?? "");
+  const canWrite =
+    variant === "tour"
+      ? authSession.userId === PUBLIC_OWNER_UID
+      : Boolean(authSession.userId);
 
-  const logsApi = useLogs({ userId: dataUserId });
-  const topicsApi = useTopics({ userId: dataUserId, logs: logsApi.logs });
+  useEffect(() => {
+    if (variant !== "app") return;
+    if (authSession.isLoading) return;
+    if (authSession.userId) return;
+    router.replace("/");
+  }, [variant, authSession.isLoading, authSession.userId, router]);
+
+  const logsApi = useLogs({ userId: dataUserId || undefined });
+  const topicsApi = useTopics({ userId: dataUserId || undefined, logs: logsApi.logs });
 
   const patch = usePatch({
     topics: topicsApi.topics,
@@ -74,8 +87,8 @@ export default function AppShellClient({ children }: { children: React.ReactNode
     () =>
       ({
         authSession,
-        viewMode,
-        setViewMode,
+        viewMode: effectiveViewMode,
+        setViewMode: () => {},
         effectiveViewMode,
         dataUserId,
         canWrite,
@@ -85,7 +98,6 @@ export default function AppShellClient({ children }: { children: React.ReactNode
       }) as const,
     [
       authSession,
-      viewMode,
       effectiveViewMode,
       dataUserId,
       canWrite,
@@ -100,13 +112,20 @@ export default function AppShellClient({ children }: { children: React.ReactNode
 
   const tabs = useMemo(
     () =>
-      [
-        { href: "/app/patch", label: "Patch" },
-        { href: "/app/minor", label: "Minor" },
-        { href: "/app/major", label: "Major" },
-        { href: "/app/profile", label: "Profile" },
-      ] as const,
-    [],
+      (variant === "tour"
+        ? ([
+            { href: "/tour/patch", label: "Patch" },
+            { href: "/tour/minor", label: "Minor" },
+            { href: "/tour/major", label: "Major" },
+            { href: "/tour/blog", label: "Blog" },
+          ] as const)
+        : ([
+            { href: "/app/patch", label: "Patch" },
+            { href: "/app/minor", label: "Minor" },
+            { href: "/app/major", label: "Major" },
+            { href: "/app/profile", label: "Profile" },
+          ] as const)),
+    [variant],
   );
 
   return (
@@ -147,36 +166,10 @@ export default function AppShellClient({ children }: { children: React.ReactNode
                   {selectedTopicTitle || "Topic 선택"}
                 </p>
                 <p className="truncate text-xs text-zinc-500">
-                  {effectiveViewMode === "public"
-                    ? "운영자 흐름을 보고 있어요."
+                  {variant === "tour"
+                    ? "운영자의 흐름을 구경해보세요."
                     : "내 흐름을 기록하고 있어요."}
                 </p>
-              </div>
-
-              <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-1">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("public")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                    effectiveViewMode === "public"
-                      ? "bg-zinc-900 text-white"
-                      : "text-zinc-700 hover:bg-zinc-100"
-                  }`}
-                >
-                  운영자 초록북
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("mine")}
-                  disabled={!authSession.userId}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                    effectiveViewMode === "mine"
-                      ? "bg-zinc-900 text-white"
-                      : "text-zinc-700 hover:bg-zinc-100"
-                  } disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  내 초록북
-                </button>
               </div>
             </div>
           </div>
@@ -189,7 +182,7 @@ export default function AppShellClient({ children }: { children: React.ReactNode
         </div>
 
         <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-zinc-200/70 bg-white/90 backdrop-blur">
-          <div className="mx-auto grid w-full max-w-md grid-cols-4 gap-2 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="mx-auto grid w-full max-w-md grid-cols-4 gap-2 px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             {tabs.map((t) => (
               <TabLink key={t.href} href={t.href} label={t.label} active={active(t.href)} />
             ))}

@@ -106,7 +106,7 @@ export default function LandingClient() {
               </button>
             )}
             <Link
-              href="/app/patch"
+              href="/tour/patch"
               className="rounded-2xl bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
               {PUBLIC_OWNER_LABEL} 보기

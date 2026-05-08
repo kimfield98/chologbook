@@ -3,6 +3,7 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 export type FirebaseWebConfig = {
   apiKey: string;
@@ -51,6 +52,9 @@ export let db: Firestore | null = null;
 /** Auth 인스턴스 — `initFirebase()` 이후에만 채워짐 */
 export let auth: Auth | null = null;
 
+/** Storage 인스턴스 — `initFirebase()` 이후에만 채워짐 */
+export let storage: FirebaseStorage | null = null;
+
 /** 클라이언트에서 환경변수가 모두 있으면 true */
 export function isFirebaseConfigured(): boolean {
   return readFirebaseConfigFromEnv() !== null;
@@ -78,6 +82,10 @@ export function initFirebase(): Firestore | null {
 
   if (!auth && firebaseApp) {
     auth = getAuth(firebaseApp);
+  }
+
+  if (!storage && firebaseApp) {
+    storage = getStorage(firebaseApp);
   }
 
   return db;

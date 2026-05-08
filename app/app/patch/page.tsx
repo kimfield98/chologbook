@@ -10,6 +10,8 @@ export default function PatchTabPage() {
   const { topicsApi, logsApi, patch, canWrite, effectiveViewMode } =
     useAppContext();
 
+  const hasSelectedTopic = Boolean(topicsApi.selectedTopicId);
+
   const focusVisualId = getFocusTopicId(
     topicsApi.selectedTopicId,
     topicsApi.lastFocusTopicId,
@@ -20,10 +22,12 @@ export default function PatchTabPage() {
     [patch.sortedLogs],
   );
 
+  const hideBottomCard = effectiveViewMode === "public" && !hasSelectedTopic;
+
   return (
     <section className="flex flex-col gap-5">
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <p className="text-center text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <p className="text-center text-xs font-semibold uppercase tracking-wide text-zinc-500 pt-2">
           Topics
         </p>
         <div className="mt-3 max-h-64 overflow-y-auto pr-1">
@@ -36,13 +40,8 @@ export default function PatchTabPage() {
         </div>
       </div>
 
+      {hideBottomCard ? null : (
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm flex-1 min-h-0">
-        {effectiveViewMode === "public" ? (
-          <p className="text-center text-xs text-zinc-500">
-            운영자 흐름은 읽기 전용이에요.
-          </p>
-        ) : null}
-
         <div className="mt-3 space-y-3">
           {patch.latestNextPatchDirection ? (
             <div className="flex items-start justify-center gap-2 text-sm text-emerald-800">
@@ -61,9 +60,8 @@ export default function PatchTabPage() {
             </p>
           )}
 
-          {effectiveViewMode === "public" ? (
+          {effectiveViewMode === "public" && !hasSelectedTopic ? null : effectiveViewMode === "public" ? (
             <div className="pt-1">
-              <p className="text-xs font-semibold text-zinc-700">최근 Patch</p>
               <ul className="mt-2 max-h-72 overflow-y-auto divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
                 {patchLogs.length === 0 ? (
                   <li className="px-3 py-6 text-center text-sm text-zinc-500">
@@ -112,6 +110,7 @@ export default function PatchTabPage() {
           ) : null}
         </div>
       </div>
+      )}
     </section>
   );
 }

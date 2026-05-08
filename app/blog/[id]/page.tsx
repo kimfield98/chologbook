@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
-  BLOG_CATEGORIES,
   assertBlogCategory,
   getBlogPost,
   parseBlogPostId,
 } from "@/lib/blog/fs";
+import { BLOG_CATEGORIES } from "@/lib/blog/constants";
 
 export const dynamic = "force-dynamic";
 

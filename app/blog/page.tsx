@@ -1,10 +1,9 @@
 import Link from "next/link";
 import {
-  BLOG_CATEGORIES,
-  BLOG_CATEGORY_ALL,
   listAllBlogPosts,
   makeBlogPostId,
 } from "@/lib/blog/fs";
+import { BLOG_CATEGORIES, BLOG_CATEGORY_ALL } from "@/lib/blog/constants";
 
 export const dynamic = "force-dynamic";
 
