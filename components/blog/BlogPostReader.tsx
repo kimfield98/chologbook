@@ -103,7 +103,7 @@ export function BlogPostReader({
   return (
     <div className="min-h-dvh bg-zinc-50 text-zinc-900">
       <header className="sticky top-0 z-10 border-b border-zinc-200/80 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
           <button
             type="button"
             onClick={() => router.back()}
@@ -123,7 +123,7 @@ export function BlogPostReader({
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-8">
+      <main className="mx-auto max-w-md px-4 py-8">
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">

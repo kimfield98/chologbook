@@ -31,6 +31,13 @@ function TabLink({ href, label, active }: TabLinkProps) {
   );
 }
 
+const APP_TABS = [
+  { href: "/app/patch", base: "/app/patch", label: "Patch" },
+  { href: "/app/minor", base: "/app/minor", label: "Minor" },
+  { href: "/app/major", base: "/app/major", label: "Major" },
+  { href: "/app/blog", base: "/app/blog", label: "Blog" },
+] as const;
+
 export default function AppShellClient({
   children,
 }: {
@@ -110,17 +117,6 @@ export default function AppShellClient({
     [authSession, effectiveViewMode, dataUserId, canWrite, logsApi, topicsApi, patch],
   );
 
-  const tabs = useMemo(
-    () =>
-      [
-        { href: "/app/patch", base: "/app/patch", label: "Patch" },
-        { href: "/app/minor", base: "/app/minor", label: "Minor" },
-        { href: "/app/major", base: "/app/major", label: "Major" },
-        { href: "/app/blog", base: "/app/blog", label: "Blog" },
-      ] as const,
-    [],
-  );
-
   const tabActive = (base: string) => {
     if (base === "/app/blog") {
       return pathname === "/app/blog" || Boolean(pathname?.startsWith("/app/blog/"));
@@ -152,9 +148,9 @@ export default function AppShellClient({
               >
                 CHOLOGBOOK
               </button>
-              {showAccountBar && authSession.user ? (
+              {showAccountBar ? (
                 <p className="max-w-full truncate px-2 pt-0.5 text-center text-xs font-medium text-zinc-600">
-                  {authSession.user.email ?? authSession.userId}
+                  {authSession.user?.email ?? authSession.userId}
                 </p>
               ) : null}
             </div>
@@ -224,7 +220,7 @@ export default function AppShellClient({
 
         <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-zinc-200/70 bg-white/90 backdrop-blur">
           <div className="mx-auto grid w-full max-w-md grid-cols-4 gap-2 px-3 py-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            {tabs.map((t) => (
+            {APP_TABS.map((t) => (
               <TabLink
                 key={t.base}
                 href={t.href}

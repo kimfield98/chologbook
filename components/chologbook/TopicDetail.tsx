@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { getLogType } from "@/lib/chologbook/logs";
 import { countTopicVersion, topicVersionLabelFromLogs } from "@/lib/chologbook/topicVersion";
@@ -81,6 +82,7 @@ export function TopicDetail({
   feedbackMessage,
   onPatch,
 }: TopicDetailProps) {
+  const pathname = usePathname();
   const minorSaveDisabled = !minorDraftText.trim();
   const [referenceOpen, setReferenceOpen] = useState(true);
   const referenceOpenEffective = majorInputMode ? true : referenceOpen;
@@ -492,10 +494,10 @@ export function TopicDetail({
           <button
             type="button"
             onClick={() => setTab("patch")}
-            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+            className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs font-semibold transition ${
               effectiveTab === "patch"
-                ? "bg-emerald-600 text-white"
-                : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                ? "bg-zinc-900 text-white"
+                : "text-zinc-600 hover:bg-zinc-100"
             }`}
           >
             Patch
@@ -503,10 +505,10 @@ export function TopicDetail({
           <button
             type="button"
             onClick={() => setTab("minor")}
-            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+            className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs font-semibold transition ${
               effectiveTab === "minor"
                 ? "bg-zinc-900 text-white"
-                : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                : "text-zinc-600 hover:bg-zinc-100"
             }`}
           >
             Minor
@@ -514,17 +516,21 @@ export function TopicDetail({
           <button
             type="button"
             onClick={() => setTab("major")}
-            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+            className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs font-semibold transition ${
               effectiveTab === "major"
                 ? "bg-zinc-900 text-white"
-                : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                : "text-zinc-600 hover:bg-zinc-100"
             }`}
           >
             Major
           </button>
           <Link
             href="/app/blog"
-            className="flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+            className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs font-semibold transition ${
+              pathname === "/app/blog" || pathname?.startsWith("/app/blog/")
+                ? "bg-zinc-900 text-white"
+                : "text-zinc-600 hover:bg-zinc-100"
+            }`}
           >
             Blog
           </Link>

@@ -91,7 +91,7 @@ export default function AppBlogIndexClient({
                 <li key={p.id}>
                   <Link
                     href={`/p/${p.id}`}
-                    className="block px-5 py-4 transition hover:bg-emerald-50/20"
+                    className="block px-5 py-4 transition hover:bg-zinc-50"
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900">

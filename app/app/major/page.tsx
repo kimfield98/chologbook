@@ -5,7 +5,7 @@ import { useAppContext } from "@/app/app/AppContext";
 import { getLogType } from "@/lib/chologbook/logs";
 
 export default function MajorTabPage() {
-  const { patch, canWrite, effectiveViewMode } = useAppContext();
+  const { patch, canWrite } = useAppContext();
 
   const majorLogs = useMemo(
     () => patch.sortedLogs.filter((l) => getLogType(l) === "major"),
@@ -13,7 +13,6 @@ export default function MajorTabPage() {
   );
 
   const remainingMinorCount = (() => {
-    // majorProgressLabel: "x/y"
     const raw = String(patch.majorProgressLabel ?? "");
     const m = raw.match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
     if (!m) return null;
@@ -24,7 +23,6 @@ export default function MajorTabPage() {
   })();
 
   const majorCtaLabel = (() => {
-    if (effectiveViewMode === "public") return "읽기 전용";
     if (patch.todayKey === "") return "날짜 불러오는 중…";
     if (!canWrite) return "로그인 후 작성할 수 있어요";
     if (patch.canStartMajor) return "지금 기록하기";
@@ -37,10 +35,7 @@ export default function MajorTabPage() {
   })();
 
   const majorCtaDisabled =
-    effectiveViewMode === "public" ||
-    patch.todayKey === "" ||
-    !canWrite ||
-    !patch.canStartMajor;
+    patch.todayKey === "" || !canWrite || !patch.canStartMajor;
 
   return (
     <section className="space-y-5">
@@ -71,7 +66,7 @@ export default function MajorTabPage() {
               value={patch.majorDraftChange}
               onChange={(e) => patch.setMajorDraftChange(e.target.value)}
               rows={3}
-              className="w-full resize-y rounded-xl bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-1 ring-amber-200/80 focus:ring-2 focus:ring-amber-500/25"
+              className="w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/20 focus:border-emerald-300 focus:ring-2"
             />
             <label className="block text-sm font-bold text-amber-950">
               가장 기억에 남는 순간
@@ -80,7 +75,7 @@ export default function MajorTabPage() {
               value={patch.majorDraftMoment}
               onChange={(e) => patch.setMajorDraftMoment(e.target.value)}
               rows={3}
-              className="w-full resize-y rounded-xl bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-1 ring-amber-200/80 focus:ring-2 focus:ring-amber-500/25"
+              className="w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/20 focus:border-emerald-300 focus:ring-2"
             />
             <label className="block text-sm font-bold text-amber-950">
               다음 Patch 방향
@@ -89,7 +84,7 @@ export default function MajorTabPage() {
               value={patch.majorDraftNext}
               onChange={(e) => patch.setMajorDraftNext(e.target.value)}
               rows={2}
-              className="w-full resize-y rounded-xl bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-1 ring-amber-200/80 focus:ring-2 focus:ring-amber-500/25"
+              className="w-full resize-y rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/20 focus:border-emerald-300 focus:ring-2"
             />
           </div>
 
@@ -104,12 +99,8 @@ export default function MajorTabPage() {
             <button
               type="button"
               onClick={patch.handleSaveMajor}
-              disabled={
-                effectiveViewMode === "public" ||
-                patch.majorSaveDisabled ||
-                !canWrite
-              }
-              className="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm enabled:hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+              disabled={patch.majorSaveDisabled || !canWrite}
+              className="rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm enabled:hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
             >
               저장
             </button>
@@ -147,4 +138,3 @@ export default function MajorTabPage() {
     </section>
   );
 }
-

@@ -5,7 +5,7 @@ import { useAppContext } from "@/app/app/AppContext";
 import { getLogType } from "@/lib/chologbook/logs";
 
 export default function MinorTabPage() {
-  const { patch, canWrite, effectiveViewMode } = useAppContext();
+  const { patch, canWrite } = useAppContext();
 
   const minorLogs = useMemo(
     () => patch.sortedLogs.filter((l) => getLogType(l) === "minor"),
@@ -16,18 +16,16 @@ export default function MinorTabPage() {
     <section className="space-y-5">
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
         <p className="text-center text-xs text-zinc-500">
-          {effectiveViewMode === "public"
-            ? "운영자 흐름은 읽기 전용이에요."
-            : "오늘 떠오른 생각을 한 줄로 남겨요."}
+          오늘 떠오른 생각을 한 줄로 남겨요.
         </p>
 
-        {effectiveViewMode === "public" ? null : !patch.minorInputMode ? (
+        {!patch.minorInputMode ? (
           <div className="mt-4 space-y-2">
             <button
               type="button"
               onClick={patch.handleOpenMinorInput}
               disabled={patch.minorOpenDisabled || !canWrite}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white shadow-sm transition enabled:hover:bg-emerald-700 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
             >
               오늘 한 줄 남기기
             </button>
@@ -35,9 +33,7 @@ export default function MinorTabPage() {
               <p className="text-center text-xs text-zinc-500">
                 오늘은 이미 한 줄을 남겼어요.
               </p>
-            ) : (
-              null
-            )}
+            ) : null}
           </div>
         ) : (
           <div className="mt-4 space-y-2 rounded-2xl border border-zinc-200 bg-zinc-50/60 p-3">
@@ -102,4 +98,3 @@ export default function MinorTabPage() {
     </section>
   );
 }
-
