@@ -5,21 +5,12 @@ import { useAppContext } from "@/app/app/AppContext";
 import { getLogType } from "@/lib/chologbook/logs";
 
 export default function MajorTabPage() {
-  const { patch, topicsApi, canWrite, effectiveViewMode } = useAppContext();
+  const { patch, canWrite, effectiveViewMode } = useAppContext();
 
-  const selected = topicsApi.selectedTopicId;
   const majorLogs = useMemo(
     () => patch.sortedLogs.filter((l) => getLogType(l) === "major"),
     [patch.sortedLogs],
   );
-
-  if (!selected) {
-    return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-center text-sm text-zinc-600 shadow-sm">
-        먼저 Patch 탭에서 Topic을 선택해 주세요.
-      </div>
-    );
-  }
 
   const remainingMinorCount = (() => {
     // majorProgressLabel: "x/y"
@@ -36,10 +27,10 @@ export default function MajorTabPage() {
     if (effectiveViewMode === "public") return "읽기 전용";
     if (patch.todayKey === "") return "날짜 불러오는 중…";
     if (!canWrite) return "로그인 후 작성할 수 있어요";
-    if (patch.canStartMajor) return "흐름 정리 시작하기";
+    if (patch.canStartMajor) return "지금 기록하기";
     if (typeof remainingMinorCount === "number") {
       return remainingMinorCount <= 0
-        ? "흐름 정리 시작하기"
+        ? "지금 기록하기"
         : `Minor 기록이 ${remainingMinorCount}개 더 필요해요`;
     }
     return patch.majorLockHint || "Minor 기록이 더 필요해요";
@@ -55,9 +46,6 @@ export default function MajorTabPage() {
     <section className="space-y-5">
       {!patch.majorInputMode ? (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-center text-sm font-semibold text-zinc-900">
-            지금 흐름 정리
-          </p>
           <p className="mt-2 text-center text-sm leading-relaxed text-zinc-600">
             {patch.majorLockHint}
           </p>

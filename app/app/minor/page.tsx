@@ -5,21 +5,12 @@ import { useAppContext } from "@/app/app/AppContext";
 import { getLogType } from "@/lib/chologbook/logs";
 
 export default function MinorTabPage() {
-  const { patch, topicsApi, canWrite, effectiveViewMode } = useAppContext();
+  const { patch, canWrite, effectiveViewMode } = useAppContext();
 
-  const selected = topicsApi.selectedTopicId;
   const minorLogs = useMemo(
     () => patch.sortedLogs.filter((l) => getLogType(l) === "minor"),
     [patch.sortedLogs],
   );
-
-  if (!selected) {
-    return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-center text-sm text-zinc-600 shadow-sm">
-        먼저 Patch 탭에서 Topic을 선택해 주세요.
-      </div>
-    );
-  }
 
   return (
     <section className="space-y-5">
@@ -45,9 +36,7 @@ export default function MinorTabPage() {
                 오늘은 이미 한 줄을 남겼어요.
               </p>
             ) : (
-              <p className="text-center text-xs text-zinc-500">
-                필요할 때만 조용히 남겨요.
-              </p>
+              null
             )}
           </div>
         ) : (

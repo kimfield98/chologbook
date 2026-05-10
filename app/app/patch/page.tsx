@@ -1,21 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { TopicList } from "@/components/chologbook/TopicList";
 import { useAppContext } from "@/app/app/AppContext";
-import { getFocusTopicId } from "@/lib/chologbook/getFocusTopicId";
 import { getLogType } from "@/lib/chologbook/logs";
 
 export default function PatchTabPage() {
-  const { topicsApi, logsApi, patch, canWrite, effectiveViewMode } =
-    useAppContext();
+  const { topicsApi, patch, canWrite, effectiveViewMode } = useAppContext();
 
   const hasSelectedTopic = Boolean(topicsApi.selectedTopicId);
-
-  const focusVisualId = getFocusTopicId(
-    topicsApi.selectedTopicId,
-    topicsApi.lastFocusTopicId,
-  );
 
   const patchLogs = useMemo(
     () => patch.sortedLogs.filter((l) => getLogType(l) === "patch"),
@@ -26,23 +18,9 @@ export default function PatchTabPage() {
 
   return (
     <section className="flex flex-col gap-5">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <p className="text-center text-xs font-semibold uppercase tracking-wide text-zinc-500 pt-2">
-          Topics
-        </p>
-        <div className="mt-3 max-h-64 overflow-y-auto pr-1">
-          <TopicList
-            topics={topicsApi.topics}
-            allLogs={logsApi.logs}
-            focusVisualId={focusVisualId}
-            onSelectTopic={topicsApi.selectTopic}
-          />
-        </div>
-      </div>
-
       {hideBottomCard ? null : (
       <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm flex-1 min-h-0">
-        <div className="mt-3 space-y-3">
+        <div className="space-y-3">
           {patch.latestNextPatchDirection ? (
             <div className="flex items-start justify-center gap-2 text-sm text-emerald-800">
               <div className="min-w-0">
@@ -60,7 +38,7 @@ export default function PatchTabPage() {
             </p>
           )}
 
-          {effectiveViewMode === "public" && !hasSelectedTopic ? null : effectiveViewMode === "public" ? (
+          {effectiveViewMode === "public" ? (
             <div className="pt-1">
               <ul className="mt-2 max-h-72 overflow-y-auto divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
                 {patchLogs.length === 0 ? (
@@ -90,7 +68,6 @@ export default function PatchTabPage() {
               disabled={patch.patchDisabled || !canWrite}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white shadow-sm transition enabled:hover:bg-emerald-700 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
             >
-              <span aria-hidden>✔</span>
               {patch.alreadyPatchedToday
                 ? "오늘은 이미 기록했어요"
                 : "오늘도 했어요"}

@@ -59,6 +59,22 @@ export function useTopics({ userId, logs }: UseTopicsOptions) {
     return mergeRemoteTopicsWithLogs(remoteTopics, logs, INITIAL_TOPICS);
   }, [firebaseOn, localModeTopics, userId, remoteTopics, logs]);
 
+  /** 토픽이 있으면 항상 하나는 선택된 상태로 둔다(목록 첫 항목). 삭제 등으로 선택이 무효면 첫 토픽으로 복구. */
+  useEffect(() => {
+    if (topics.length === 0) return;
+    const firstId = topics[0]!.id;
+
+    setSelectedTopicId((sel) => {
+      if (sel !== null && topics.some((t) => t.id === sel)) return sel;
+      return firstId;
+    });
+
+    setLastFocusRaw((lf) => {
+      if (lf !== null && topics.some((t) => t.id === lf)) return lf;
+      return firstId;
+    });
+  }, [topics]);
+
   /** 시드 id("1") 등이 사라진 뒤에도 홈 강조가 유효한 Topic을 가리키도록 보정 */
   const lastFocusTopicId = useMemo(() => {
     if (lastFocusRaw && topics.some((t) => t.id === lastFocusRaw)) {

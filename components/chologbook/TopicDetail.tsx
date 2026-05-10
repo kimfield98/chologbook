@@ -349,7 +349,7 @@ export function TopicDetail({
                   disabled={!canStartMajor || todayKey === ""}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-4 text-base font-semibold text-emerald-950 shadow-sm transition enabled:hover:bg-emerald-100/70 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none"
                 >
-                  지금 흐름 정리하기
+                  Major 기록하기
                 </button>
                 <p className="text-center text-xs text-zinc-500">
                   현재 구간 상태: <span className="font-mono">{majorProgressLabel}</span>

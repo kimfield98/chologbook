@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { TopicList } from "@/components/chologbook/TopicList";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogs } from "@/hooks/useLogs";
 import { usePatch } from "@/hooks/usePatch";
 import { useTopics } from "@/hooks/useTopics";
-import { PUBLIC_OWNER_LABEL, PUBLIC_OWNER_UID } from "@/lib/chologbook/publicOwner";
+import { getFocusTopicId } from "@/lib/chologbook/getFocusTopicId";
+import { PUBLIC_OWNER_UID } from "@/lib/chologbook/publicOwner";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { AppProvider } from "./AppContext";
 
@@ -82,6 +84,21 @@ export default function AppShellClient({
     if (!id) return "";
     return topicsApi.topics.find((t) => t.id === id)?.title ?? "";
   }, [topicsApi.selectedTopicId, topicsApi.topics]);
+
+  const [topicPickerOpen, setTopicPickerOpen] = useState(true);
+  const focusVisualId = useMemo(
+    () => getFocusTopicId(topicsApi.selectedTopicId, topicsApi.lastFocusTopicId),
+    [topicsApi.selectedTopicId, topicsApi.lastFocusTopicId],
+  );
+
+  const handleHeaderSelectTopic = useCallback(
+    (id: string) => {
+      topicsApi.selectTopic(id);
+    },
+    [topicsApi],
+  );
+
+  const showTopicPicker = topicsApi.topics.length > 0;
 
   const ctxValue = useMemo(
     () =>
@@ -159,19 +176,63 @@ export default function AppShellClient({
         </header>
 
         <div className="flex flex-1 flex-col px-4 pt-6 pb-32 overflow-hidden">
-          <div className="mb-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
+          <div className="mb-4 shrink-0">
+            {showTopicPicker ? (
+              <div className="rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-1 ring-zinc-100">
+                <button
+                  type="button"
+                  aria-expanded={topicPickerOpen}
+                  onClick={() => setTopicPickerOpen((o) => !o)}
+                  className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left transition hover:bg-zinc-50/80"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-zinc-900">
+                      {selectedTopicTitle || "Topic 선택"}
+                    </p>
+                    {!topicPickerOpen ? (
+                      <p className="truncate text-xs text-zinc-500">
+                        {variant === "tour"
+                          ? "운영자 흐름"
+                          : "현재 흐름"}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span
+                    className={`shrink-0 text-xs text-zinc-400 transition-transform duration-200 ${
+                      topicPickerOpen ? "rotate-180" : ""
+                    }`}
+                    aria-hidden
+                  >
+                    ▼
+                  </span>
+                </button>
+                <div
+                  className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+                    topicPickerOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    <div className="border-t border-zinc-100 px-2 pb-3 pt-1 [&_ul]:mt-2">
+                      <TopicList
+                        topics={topicsApi.topics}
+                        allLogs={logsApi.logs}
+                        focusVisualId={focusVisualId}
+                        onSelectTopic={handleHeaderSelectTopic}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/60 px-3 py-3">
                 <p className="truncate text-sm font-semibold text-zinc-900">
-                  {selectedTopicTitle || "Topic 선택"}
+                  {selectedTopicTitle || "Topic 없음"}
                 </p>
                 <p className="truncate text-xs text-zinc-500">
-                  {variant === "tour"
-                    ? "운영자의 흐름을 구경해보세요."
-                    : "내 흐름을 기록하고 있어요."}
+                  {variant === "tour" ? "운영자 흐름" : "현재 흐름"}
                 </p>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="mx-auto w-full max-w-md flex-1 overflow-y-auto">
