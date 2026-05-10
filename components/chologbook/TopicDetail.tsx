@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
+import {
+  countMinorsSinceLastMajor,
+  formatMajorButtonLabel,
+} from "@/lib/chologbook/majorRules";
 import { getLogType } from "@/lib/chologbook/logs";
+import {
+  focusRingPrimary,
+  neutralSolidButton,
+  patchPrimaryCtaFullWidth,
+  primaryCtaFullWidth,
+} from "@/lib/ui/appButtonStyles";
 import { countTopicVersion, topicVersionLabelFromLogs } from "@/lib/chologbook/topicVersion";
 import type { Log } from "@/lib/chologbook/types";
 
@@ -17,8 +27,6 @@ export type TopicDetailProps = {
   referenceLogsPatchMinor: Log[];
   latestNextPatchDirection: string;
   canStartMajor: boolean;
-  majorLockHint: string;
-  majorProgressLabel: string;
   onOpenMajorComposer: () => void;
   majorInputMode: boolean;
   majorDraftChange: string;
@@ -55,8 +63,6 @@ export function TopicDetail({
   referenceLogsPatchMinor,
   latestNextPatchDirection,
   canStartMajor,
-  majorLockHint,
-  majorProgressLabel,
   onOpenMajorComposer,
   majorInputMode,
   majorDraftChange,
@@ -100,6 +106,23 @@ export function TopicDetail({
   const majorLogs = useMemo(
     () => sortedLogs.filter((l) => getLogType(l) === "major"),
     [sortedLogs],
+  );
+
+  const segmentMinorCount = useMemo(
+    () => countMinorsSinceLastMajor(sortedLogs),
+    [sortedLogs],
+  );
+
+  const majorButtonLabel = useMemo(
+    () =>
+      formatMajorButtonLabel({
+        todayKey,
+        canWrite,
+        canStartMajor,
+        minorCountInSegment: segmentMinorCount,
+        hasSelectedTopic: true,
+      }),
+    [todayKey, canWrite, canStartMajor, segmentMinorCount],
   );
 
   return (
@@ -207,7 +230,7 @@ export function TopicDetail({
               type="button"
               onClick={onPatch}
               disabled={patchDisabled}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-4 text-base font-semibold text-white shadow-sm transition enabled:hover:bg-emerald-700 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
+              className={patchPrimaryCtaFullWidth}
             >
               <span aria-hidden>✔</span>
               {alreadyPatchedToday ? "오늘은 이미 기록했어요" : "오늘도 했어요"}
@@ -251,7 +274,7 @@ export function TopicDetail({
                   type="button"
                   onClick={onOpenMinorInput}
                   disabled={minorOpenDisabled}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none"
+                  className={primaryCtaFullWidth}
                 >
                   오늘 한 줄 남기기
                 </button>
@@ -268,7 +291,7 @@ export function TopicDetail({
             ) : null}
 
             {minorInputMode ? (
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 space-y-2">
+              <div className="space-y-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                 <p className="text-xs font-medium text-zinc-700">
                   오늘 떠오른 한 줄을 남겨보세요
                 </p>
@@ -276,7 +299,7 @@ export function TopicDetail({
                   value={minorDraftText}
                   onChange={(e) => onMinorDraftText(e.target.value)}
                   rows={3}
-                  className="w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-emerald-500/20 focus:border-emerald-300 focus:ring-2"
+                  className={`w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 ${focusRingPrimary}`}
                   placeholder="예: 요즘 집중이 잘 된다"
                   autoFocus
                 />
@@ -292,7 +315,7 @@ export function TopicDetail({
                     type="button"
                     onClick={onSaveMinor}
                     disabled={minorSaveDisabled}
-                    className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white enabled:hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
+                    className={neutralSolidButton}
                   >
                     저장
                   </button>
@@ -311,10 +334,10 @@ export function TopicDetail({
                   minorLogs.map((log) => (
                     <li
                       key={log.id}
-                      className="rounded-xl border border-orange-200/80 bg-orange-50/40 px-3 py-2 text-sm text-zinc-800"
+                      className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-800"
                     >
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-orange-950/80">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-600">
                           Minor
                         </span>
                         <span className="font-mono text-[11px] text-zinc-500">
@@ -336,24 +359,14 @@ export function TopicDetail({
           <div className="space-y-4">
             {!majorInputMode ? (
               <div className="space-y-3">
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-zinc-800">
-                    구간 정리
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">{majorLockHint}</p>
-                </div>
-
                 <button
                   type="button"
                   onClick={onOpenMajorComposer}
                   disabled={!canStartMajor || todayKey === ""}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-4 text-base font-semibold text-emerald-950 shadow-sm transition enabled:hover:bg-emerald-100/70 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none"
+                  className={primaryCtaFullWidth}
                 >
-                  Major 기록하기
+                  {majorButtonLabel}
                 </button>
-                <p className="text-center text-xs text-zinc-500">
-                  현재 구간 상태: <span className="font-mono">{majorProgressLabel}</span>
-                </p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -361,35 +374,35 @@ export function TopicDetail({
                   이 구간을 정리하는 Major를 작성해 주세요.
                 </p>
 
-                <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3 space-y-3">
-                  <label className="block text-xs font-semibold text-amber-900">
+                <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                  <label className="block text-xs font-semibold text-zinc-800">
                     이 구간에서 달라진 점
                   </label>
                   <textarea
                     value={majorDraftChange}
                     onChange={(e) => onMajorDraftChange(e.target.value)}
                     rows={3}
-                    className="w-full resize-y rounded-lg border border-amber-200/80 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-amber-500/20 focus:border-amber-400 focus:ring-2"
+                    className={`w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 ${focusRingPrimary}`}
                     placeholder="예: 매일 조금씩이라도 하게 됐어요"
                   />
-                  <label className="block text-xs font-semibold text-amber-900">
+                  <label className="block text-xs font-semibold text-zinc-800">
                     가장 기억에 남는 순간
                   </label>
                   <textarea
                     value={majorDraftMoment}
                     onChange={(e) => onMajorDraftMoment(e.target.value)}
                     rows={3}
-                    className="w-full resize-y rounded-lg border border-amber-200/80 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-amber-500/20 focus:border-amber-400 focus:ring-2"
+                    className={`w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 ${focusRingPrimary}`}
                     placeholder="예: 2주 연속했을 때 스스로 놀랐던 날"
                   />
-                  <label className="block text-xs font-semibold text-amber-900">
+                  <label className="block text-xs font-semibold text-zinc-800">
                     다음 Patch 방향
                   </label>
                   <textarea
                     value={majorDraftNext}
                     onChange={(e) => onMajorDraftNext(e.target.value)}
                     rows={2}
-                    className="w-full resize-y rounded-lg border border-amber-200/80 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-amber-500/20 focus:border-amber-400 focus:ring-2"
+                    className={`w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 ${focusRingPrimary}`}
                     placeholder="예: 시간을 5분만 줄여보기"
                   />
                 </div>
@@ -447,7 +460,7 @@ export function TopicDetail({
                     type="button"
                     onClick={onSaveMajor}
                     disabled={majorSaveDisabled}
-                    className="rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm enabled:hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                    className={`${neutralSolidButton} px-4 py-2.5 shadow-sm`}
                   >
                     Major 저장
                   </button>
@@ -464,12 +477,12 @@ export function TopicDetail({
                   </li>
                 ) : (
                   majorLogs.map((log) => (
-                    <li key={log.id} className="rounded-2xl border border-amber-200 bg-amber-50/40 px-3 py-3 text-zinc-800">
+                    <li key={log.id} className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-zinc-800">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-amber-950">
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-600">
                           Major
                         </span>
-                        <span className="font-mono text-[11px] text-amber-900/80">
+                        <span className="font-mono text-[11px] text-zinc-500">
                           {log.date}
                         </span>
                       </div>
@@ -496,8 +509,8 @@ export function TopicDetail({
             onClick={() => setTab("patch")}
             className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs font-semibold transition ${
               effectiveTab === "patch"
-                ? "bg-zinc-900 text-white"
-                : "text-zinc-600 hover:bg-zinc-100"
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
             }`}
           >
             Patch
@@ -507,8 +520,8 @@ export function TopicDetail({
             onClick={() => setTab("minor")}
             className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs font-semibold transition ${
               effectiveTab === "minor"
-                ? "bg-zinc-900 text-white"
-                : "text-zinc-600 hover:bg-zinc-100"
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
             }`}
           >
             Minor
@@ -518,8 +531,8 @@ export function TopicDetail({
             onClick={() => setTab("major")}
             className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs font-semibold transition ${
               effectiveTab === "major"
-                ? "bg-zinc-900 text-white"
-                : "text-zinc-600 hover:bg-zinc-100"
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
             }`}
           >
             Major
@@ -528,7 +541,7 @@ export function TopicDetail({
             href="/app/blog"
             className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-xs font-semibold transition ${
               pathname === "/app/blog" || pathname?.startsWith("/app/blog/")
-                ? "bg-zinc-900 text-white"
+                ? "bg-zinc-800 text-white shadow-sm"
                 : "text-zinc-600 hover:bg-zinc-100"
             }`}
           >

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { BlogEditor, type BlogEditorValue } from "@/components/blog/BlogEditor";
 import { useBlogPosts } from "@/hooks/useBlogPosts";
+import { primaryCtaCompact } from "@/lib/ui/appButtonStyles";
 
 function newPostId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -54,11 +55,11 @@ export default function AppBlogNewPage() {
                 setIsSaving(false);
               }
             }}
-            className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition ${
+            className={
               readOnly || isSaving
-                ? "border border-zinc-200 bg-zinc-100 text-zinc-400"
-                : "bg-emerald-600 text-white hover:bg-emerald-700"
-            }`}
+                ? "shrink-0 rounded-2xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-400"
+                : primaryCtaCompact
+            }
           >
             {isSaving ? "저장 중…" : "저장"}
           </button>

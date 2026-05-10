@@ -23,7 +23,9 @@ function TabLink({ href, label, active }: TabLinkProps) {
     <Link
       href={href}
       className={`flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-xs font-semibold transition ${
-        active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+        active
+          ? "bg-zinc-800 text-white shadow-sm"
+          : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
       }`}
     >
       {label}
@@ -213,8 +215,8 @@ export default function AppShellClient({
             </div>
           ) : null}
 
-          <div className="mx-auto w-full max-w-md flex-1 overflow-y-auto">
-            <div className="flex min-h-full flex-col justify-center">{children}</div>
+          <div className="mx-auto w-full max-w-md min-h-0 flex-1 overflow-y-auto">
+            <div className="flex min-h-full min-h-0 flex-1 flex-col">{children}</div>
           </div>
         </div>
 

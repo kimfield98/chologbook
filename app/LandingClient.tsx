@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { primaryCtaLanding } from "@/lib/ui/appButtonStyles";
 
 export default function LandingClient() {
   const authSession = useAuth();
@@ -78,7 +79,7 @@ export default function LandingClient() {
             <button
               type="button"
               onClick={() => router.push("/app/patch")}
-              className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+              className={primaryCtaLanding}
             >
               나의 초록북 가기
             </button>
