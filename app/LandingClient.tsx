@@ -2,20 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { PUBLIC_OWNER_LABEL } from "@/lib/chologbook/publicOwner";
 
 export default function LandingClient() {
   const authSession = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    // 로그인 상태라면 랜딩을 건너뛰고 앱으로 진입
-    if (authSession.isLoading) return;
-    if (!authSession.userId) return;
-    router.replace("/app/patch");
-  }, [authSession.isLoading, authSession.userId, router]);
 
   return (
     <main className="min-h-dvh bg-zinc-50 text-zinc-900 flex flex-col">
@@ -91,7 +83,7 @@ export default function LandingClient() {
                 onClick={() => router.push("/app/patch")}
                 className="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-100/70"
               >
-                내 흐름 시작하기
+                나의 초록북 가기
               </button>
             ) : (
               <button
