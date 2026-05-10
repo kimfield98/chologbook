@@ -6,12 +6,15 @@ import { useAppContext } from "@/app/app/AppContext";
 import { useBlogPosts } from "@/hooks/useBlogPosts";
 import { BLOG_CATEGORIES, BLOG_CATEGORY_ALL } from "@/lib/blog/constants";
 import type { BlogCategory } from "@/lib/blog/types";
-import { PUBLIC_OWNER_UID } from "@/lib/chologbook/publicOwner";
 
-export default function AppBlogIndexClient({ initialCategory }: { initialCategory?: string }) {
+export default function AppBlogIndexClient({
+  initialCategory,
+}: {
+  initialCategory?: string;
+}) {
   const { authSession } = useAppContext();
-  const { posts, isLoading } = useBlogPosts({ dataUserId: PUBLIC_OWNER_UID });
-  const isOwner = authSession.userId === PUBLIC_OWNER_UID;
+  const uid = authSession.userId ?? "";
+  const { posts, isLoading } = useBlogPosts({ dataUserId: uid });
 
   const selected = useMemo(() => {
     const c = initialCategory;
@@ -28,26 +31,10 @@ export default function AppBlogIndexClient({ initialCategory }: { initialCategor
   return (
     <section className="space-y-4">
       <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-zinc-900">Blog</p>
-            <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-              운영자의 글을 전시합니다.
-            </p>
-          </div>
-          {isOwner ? (
-            <Link
-              href="/app/blog/new"
-              className="shrink-0 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-            >
-              글쓰기
-            </Link>
-          ) : (
-            <span className="shrink-0 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-semibold text-zinc-500">
-              읽기 전용
-            </span>
-          )}
-        </div>
+        <p className="text-sm font-semibold text-zinc-900">Blog</p>
+        <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+          내 글을 모아둔 곳이에요.
+        </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Link
@@ -74,6 +61,15 @@ export default function AppBlogIndexClient({ initialCategory }: { initialCategor
             </Link>
           ))}
         </div>
+
+        <div className="mt-4">
+          <Link
+            href="/app/blog/new"
+            className="flex w-full items-center justify-center rounded-xl border border-zinc-200/90 bg-zinc-50 px-3 py-2.5 text-xs font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-100/80 hover:text-zinc-800"
+          >
+            글쓰기
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -94,7 +90,7 @@ export default function AppBlogIndexClient({ initialCategory }: { initialCategor
               return (
                 <li key={p.id}>
                   <Link
-                    href={`/app/blog/${p.id}`}
+                    href={`/p/${p.id}`}
                     className="block px-5 py-4 transition hover:bg-emerald-50/20"
                   >
                     <div className="flex items-baseline justify-between gap-3">
@@ -118,4 +114,3 @@ export default function AppBlogIndexClient({ initialCategory }: { initialCategor
     </section>
   );
 }
-

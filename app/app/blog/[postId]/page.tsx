@@ -1,17 +1,10 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-
-export default function AppBlogDetailPage({
+export default async function AppBlogDetailRedirect({
   params,
 }: {
-  params: { postId: string };
+  params: Promise<{ postId: string }>;
 }) {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace(`/tour/blog/${params.postId}`);
-  }, [router, params.postId]);
-  return null;
+  const { postId } = await params;
+  redirect(`/p/${postId}`);
 }
-

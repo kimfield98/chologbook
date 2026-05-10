@@ -1,16 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { PUBLIC_OWNER_LABEL } from "@/lib/chologbook/publicOwner";
 
 export default function LandingClient() {
   const authSession = useAuth();
   const router = useRouter();
 
   return (
-    <main className="min-h-dvh bg-zinc-50 text-zinc-900 flex flex-col">
+    <main className="flex min-h-dvh flex-col bg-zinc-50 text-zinc-900">
       <div className="my-auto">
         <section className="mx-auto w-full max-w-md px-4 pb-10 pt-10">
           <p className="text-center text-xs font-medium uppercase tracking-widest text-emerald-600/90">
@@ -76,37 +74,28 @@ export default function LandingClient() {
         </section>
 
         <section className="mx-auto w-full max-w-md px-4 py-10">
-          <div className="flex flex-col gap-2">
-            {authSession.user ? (
-              <button
-                type="button"
-                onClick={() => router.push("/app/patch")}
-                className="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-100/70"
-              >
-                나의 초록북 가기
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void authSession.signInWithGoogle()}
-                disabled={authSession.isGooglePopupPending}
-                className="rounded-2xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-200/80 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {authSession.isGooglePopupPending
-                  ? "연결 중…"
-                  : "로그인하고 시작하기"}
-              </button>
-            )}
-            <Link
-              href="/tour/patch"
-              className="rounded-2xl bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+          {authSession.user ? (
+            <button
+              type="button"
+              onClick={() => router.push("/app/patch")}
+              className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
-              {PUBLIC_OWNER_LABEL} 보기
-            </Link>
-          </div>
+              나의 초록북 가기
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void authSession.signInWithGoogle()}
+              disabled={authSession.isGooglePopupPending}
+              className="w-full rounded-2xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-200/80 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {authSession.isGooglePopupPending
+                ? "연결 중…"
+                : "로그인하고 시작하기"}
+            </button>
+          )}
         </section>
       </div>
     </main>
   );
 }
-

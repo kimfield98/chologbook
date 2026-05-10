@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
+import AppBlogIndexClient from "./AppBlogIndexClient";
 
-export default function AppBlogIndexPage() {
-  redirect("/tour/blog");
+export default async function AppBlogIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ c?: string }>;
+}) {
+  const { c } = await searchParams;
+  return <AppBlogIndexClient initialCategory={c} />;
 }
-

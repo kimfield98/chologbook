@@ -85,9 +85,7 @@ export function TopicDetail({
   const [referenceOpen, setReferenceOpen] = useState(true);
   const referenceOpenEffective = majorInputMode ? true : referenceOpen;
   const [dangerMenuOpen, setDangerMenuOpen] = useState(false);
-  const [tab, setTab] = useState<"patch" | "minor" | "major" | "profile">(
-    "patch",
-  );
+  const [tab, setTab] = useState<"patch" | "minor" | "major">("patch");
   const versionLabel = topicVersionLabelFromLogs(sortedLogs);
   const versionCounts = countTopicVersion(sortedLogs);
 
@@ -484,33 +482,6 @@ export function TopicDetail({
           </div>
         ) : null}
 
-        {effectiveTab === "profile" ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-center">
-              <span
-                className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-700"
-                title={`이 토픽의 누적: Major ${versionCounts.major}, Minor ${versionCounts.minor}, Patch ${versionCounts.patch}`}
-              >
-                {versionLabel}
-              </span>
-            </div>
-
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-50/50 p-4 text-sm text-zinc-700">
-              <p className="font-semibold text-zinc-900">Profile / Blog</p>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-                이 영역은 추후 “초록북 안에서 만들어진 생각과 글 전시”로 확장될 예정이에요.
-              </p>
-              <div className="mt-3 flex items-center justify-center gap-2">
-                <Link
-                  href="/blog"
-                  className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50"
-                >
-                  Blog 열기
-                </Link>
-              </div>
-            </div>
-          </div>
-        ) : null}
       </div>
 
       <nav
@@ -551,17 +522,12 @@ export function TopicDetail({
           >
             Major
           </button>
-          <button
-            type="button"
-            onClick={() => setTab("profile")}
-            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-              effectiveTab === "profile"
-                ? "bg-zinc-900 text-white"
-                : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-            }`}
+          <Link
+            href="/app/blog"
+            className="flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50"
           >
-            Profile
-          </button>
+            Blog
+          </Link>
         </div>
       </nav>
     </section>
