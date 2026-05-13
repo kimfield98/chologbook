@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { TopicList } from "@/components/chologbook/TopicList";
+import { useCallback, useEffect, useMemo } from "react";
+import { TopicEmptyState, TopicShellChrome } from "@/components/chologbook/TopicShellChrome";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogs } from "@/hooks/useLogs";
 import { usePatch } from "@/hooks/usePatch";
@@ -84,7 +84,6 @@ export default function AppShellClient({
     return topicsApi.topics.find((t) => t.id === id)?.title ?? "";
   }, [topicsApi.selectedTopicId, topicsApi.topics]);
 
-  const [topicPickerOpen, setTopicPickerOpen] = useState(true);
   const focusVisualId = useMemo(
     () => getFocusTopicId(topicsApi.selectedTopicId, topicsApi.lastFocusTopicId),
     [topicsApi.selectedTopicId, topicsApi.lastFocusTopicId],
@@ -97,7 +96,37 @@ export default function AppShellClient({
     [topicsApi],
   );
 
-  const showTopicPicker = topicsApi.topics.length > 0;
+  const handleCreateTopic = useCallback(
+    (title: string) => {
+      if (!canWrite) return;
+      const topic = topicsApi.createTopic(title);
+      topicsApi.selectTopic(topic.id);
+    },
+    [canWrite, topicsApi],
+  );
+
+  const handleDeleteTopic = useCallback(
+    (topicId: string) => {
+      if (!canWrite) return;
+      const ok = window.confirm(
+        "이 Topic을 삭제할까요?\n해당 Topic의 모든 기록(Patch/Minor/Major)도 함께 삭제됩니다.",
+      );
+      if (!ok) return;
+      topicsApi.deleteTopic(topicId);
+      logsApi.clearLogsForTopic(topicId);
+    },
+    [canWrite, topicsApi, logsApi],
+  );
+
+  const handleRenameTopic = useCallback(
+    (topicId: string, title: string) => {
+      if (!canWrite) return;
+      topicsApi.renameTopic(topicId, title);
+    },
+    [canWrite, topicsApi],
+  );
+
+  const hasTopics = topicsApi.topics.length > 0;
   const onBlogRoute = Boolean(
     pathname === "/app/blog" || pathname?.startsWith("/app/blog/"),
   );
@@ -162,61 +191,28 @@ export default function AppShellClient({
         <div className="flex flex-1 flex-col overflow-hidden px-4 pb-32 pt-6">
           {showTopicChrome ? (
             <div className="mb-4 shrink-0">
-              {showTopicPicker ? (
-                <div className="rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-1 ring-zinc-100">
-                  <button
-                    type="button"
-                    aria-expanded={topicPickerOpen}
-                    onClick={() => setTopicPickerOpen((o) => !o)}
-                    className="flex w-full items-center justify-between gap-2 px-3 py-3 text-left transition hover:bg-zinc-50/80"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-zinc-900">
-                        {selectedTopicTitle || "Topic 선택"}
-                      </p>
-                      {!topicPickerOpen ? (
-                        <p className="truncate text-xs text-zinc-500">내 흐름</p>
-                      ) : null}
-                    </div>
-                    <span
-                      className={`shrink-0 text-xs text-zinc-400 transition-transform duration-200 ${
-                        topicPickerOpen ? "rotate-180" : ""
-                      }`}
-                      aria-hidden
-                    >
-                      ▼
-                    </span>
-                  </button>
-                  <div
-                    className={`grid transition-[grid-template-rows] duration-200 ease-out ${
-                      topicPickerOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                    }`}
-                  >
-                    <div className="min-h-0 overflow-hidden">
-                      <div className="border-t border-zinc-100 px-2 pb-3 pt-1 [&_ul]:mt-2">
-                        <TopicList
-                          topics={topicsApi.topics}
-                          allLogs={logsApi.logs}
-                          focusVisualId={focusVisualId}
-                          onSelectTopic={handleHeaderSelectTopic}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/60 px-3 py-3">
-                  <p className="truncate text-sm font-semibold text-zinc-900">
-                    {selectedTopicTitle || "Topic 없음"}
-                  </p>
-                  <p className="truncate text-xs text-zinc-500">내 흐름</p>
-                </div>
-              )}
+              <TopicShellChrome
+                topics={topicsApi.topics}
+                allLogs={logsApi.logs}
+                focusVisualId={focusVisualId}
+                selectedTopicTitle={selectedTopicTitle}
+                canWrite={canWrite}
+                onSelectTopic={handleHeaderSelectTopic}
+                onCreateTopic={handleCreateTopic}
+                onRenameTopic={handleRenameTopic}
+                onDeleteTopic={handleDeleteTopic}
+              />
             </div>
           ) : null}
 
           <div className="mx-auto w-full max-w-md min-h-0 flex-1 overflow-y-auto">
-            <div className="flex min-h-full min-h-0 flex-1 flex-col">{children}</div>
+            <div className="flex min-h-full min-h-0 flex-1 flex-col">
+              {showTopicChrome && !hasTopics ? (
+                <TopicEmptyState canWrite={canWrite} onCreateTopic={handleCreateTopic} />
+              ) : (
+                children
+              )}
+            </div>
           </div>
         </div>
 

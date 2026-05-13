@@ -28,11 +28,3 @@ export function migrateEmbeddedLogsToGlobal(
   }
   return { topics, logs };
 }
-
-/** 앱 기본 시드 (과거 embedded 형태로 적어 두고 마이그레이션 한 번에 반영) */
-const LEGACY_SEED: LegacyTopic[] = [
-  { id: "1", title: "경제책 읽기", logs: [] },
-];
-
-export const { topics: INITIAL_TOPICS, logs: INITIAL_LOGS } =
-  migrateEmbeddedLogsToGlobal(LEGACY_SEED);

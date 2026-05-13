@@ -15,13 +15,8 @@ function inferTitleFromLogs(logsForTopic: Log[]): string {
 
 /**
  * Firestore에서 온 Topic과, 로그에만 존재하는 topicId(레거시·미동기화)를 합친다.
- * 둘 다 비었을 때만 seed(초기 시드 토픽)를 쓴다.
  */
-export function mergeRemoteTopicsWithLogs(
-  remote: Topic[],
-  logs: Log[],
-  seedWhenEmpty: Topic[],
-): Topic[] {
+export function mergeRemoteTopicsWithLogs(remote: Topic[], logs: Log[]): Topic[] {
   const map = new Map<string, Topic>();
   for (const t of remote) {
     map.set(t.id, t);
@@ -34,9 +29,5 @@ export function mergeRemoteTopicsWithLogs(
     const forTopic = getLogsByTopic(logs, topicId);
     map.set(topicId, { id: topicId, title: inferTitleFromLogs(forTopic) });
   }
-  const merged = [...map.values()];
-  if (merged.length === 0) {
-    return [...seedWhenEmpty];
-  }
-  return merged;
+  return [...map.values()];
 }

@@ -73,6 +73,47 @@ export async function addTopicToFirestore(
   }
 }
 
+export async function updateTopicTitleInFirestore(
+  userId: string,
+  topicId: string,
+  title: string,
+): Promise<void> {
+  const db = ensureDb();
+  if (!db) {
+    throw new Error("Firestore가 초기화되지 않았습니다. .env.local을 확인하세요.");
+  }
+  if (!userId.trim()) {
+    throw new Error("userId 없이 Firestore에서 Topic을 수정할 수 없습니다.");
+  }
+  if (!topicId.trim()) {
+    throw new Error("topicId 없이 Firestore에서 Topic을 수정할 수 없습니다.");
+  }
+
+  const trimmed = title.trim();
+  if (!trimmed) {
+    throw new Error("비어 있는 Topic 이름은 저장할 수 없습니다.");
+  }
+
+  try {
+    const ref = doc(db, "users", userId, "topics", topicId);
+    await setDoc(
+      ref,
+      {
+        id: topicId,
+        userId,
+        title: trimmed,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  } catch (e) {
+    if (e instanceof FirebaseError && e.code === "permission-denied") {
+    } else {
+    }
+    throw e;
+  }
+}
+
 export async function deleteTopicFromFirestore(
   userId: string,
   topicId: string,

@@ -5,9 +5,9 @@ import {
   addTopicToFirestore,
   deleteTopicFromFirestore,
   getTopicsFromFirestore,
+  updateTopicTitleInFirestore,
 } from "@/lib/chologbook/firestoreTopics";
 import { newTopicId } from "@/lib/chologbook/id";
-import { INITIAL_TOPICS } from "@/lib/chologbook/migrate";
 import { mergeRemoteTopicsWithLogs } from "@/lib/chologbook/mergeTopicsWithLogs";
 import type { Log } from "@/lib/chologbook/types";
 import type { Topic } from "@/lib/chologbook/types";
@@ -26,7 +26,7 @@ type UseTopicsOptions = {
 export function useTopics({ userId, logs }: UseTopicsOptions) {
   const firebaseOn = isFirebaseConfigured();
   /** Firebase 미사용 시에만 쓰는 로컬 토픽 목록 */
-  const [localModeTopics, setLocalModeTopics] = useState<Topic[]>(INITIAL_TOPICS);
+  const [localModeTopics, setLocalModeTopics] = useState<Topic[]>([]);
   const [remoteTopics, setRemoteTopics] = useState<Topic[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [lastFocusRaw, setLastFocusRaw] = useState<string | null>(null);
@@ -54,9 +54,9 @@ export function useTopics({ userId, logs }: UseTopicsOptions) {
       return localModeTopics;
     }
     if (!userId?.trim()) {
-      return INITIAL_TOPICS;
+      return [];
     }
-    return mergeRemoteTopicsWithLogs(remoteTopics, logs, INITIAL_TOPICS);
+    return mergeRemoteTopicsWithLogs(remoteTopics, logs);
   }, [firebaseOn, localModeTopics, userId, remoteTopics, logs]);
 
   /** 토픽이 있으면 항상 하나는 선택된 상태로 둔다(목록 첫 항목). 삭제 등으로 선택이 무효면 첫 토픽으로 복구. */
@@ -75,7 +75,7 @@ export function useTopics({ userId, logs }: UseTopicsOptions) {
     });
   }, [topics]);
 
-  /** 시드 id("1") 등이 사라진 뒤에도 홈 강조가 유효한 Topic을 가리키도록 보정 */
+  /** 선택·강조가 유효한 Topic을 가리키도록 보정 */
   const lastFocusTopicId = useMemo(() => {
     if (lastFocusRaw && topics.some((t) => t.id === lastFocusRaw)) {
       return lastFocusRaw;
@@ -135,6 +135,47 @@ export function useTopics({ userId, logs }: UseTopicsOptions) {
     [firebaseOn, userId],
   );
 
+  const renameTopic = useCallback(
+    (topicId: string, title: string) => {
+      const trimmed = title.trim();
+      if (!topicId.trim() || !trimmed) return;
+
+      const applyTitle = (list: Topic[]) => {
+        const index = list.findIndex((t) => t.id === topicId);
+        if (index === -1) {
+          return [...list, { id: topicId, title: trimmed }];
+        }
+        return list.map((t) => (t.id === topicId ? { ...t, title: trimmed } : t));
+      };
+
+      if (!firebaseOn) {
+        setLocalModeTopics(applyTitle);
+        return;
+      }
+
+      if (!userId?.trim()) {
+        setLocalModeTopics(applyTitle);
+        return;
+      }
+
+      let previous: Topic | undefined;
+      setRemoteTopics((prev) => {
+        previous = prev.find((t) => t.id === topicId);
+        return applyTitle(prev);
+      });
+
+      void updateTopicTitleInFirestore(userId, topicId, trimmed).catch(() => {
+        setRemoteTopics((current) => {
+          if (!previous) {
+            return current.filter((t) => t.id !== topicId);
+          }
+          return current.map((t) => (t.id === topicId ? previous! : t));
+        });
+      });
+    },
+    [firebaseOn, userId],
+  );
+
   return {
     topics,
     selectedTopicId,
@@ -145,6 +186,7 @@ export function useTopics({ userId, logs }: UseTopicsOptions) {
     goHome,
     createTopic,
     deleteTopic,
+    renameTopic,
   };
 }
 

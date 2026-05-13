@@ -8,6 +8,9 @@ type TopicListProps = {
   allLogs: Log[];
   focusVisualId: string | undefined;
   onSelectTopic: (id: string) => void;
+  canWrite?: boolean;
+  onDeleteTopic?: (id: string) => void;
+  onRenameTopic?: (id: string, title: string) => void;
 };
 
 export function TopicList({
@@ -15,6 +18,9 @@ export function TopicList({
   allLogs,
   focusVisualId,
   onSelectTopic,
+  canWrite = false,
+  onDeleteTopic,
+  onRenameTopic,
 }: TopicListProps) {
   return (
     <ul className="mt-4 space-y-2">
@@ -25,6 +31,9 @@ export function TopicList({
           allLogs={allLogs}
           focusVisualId={focusVisualId}
           onSelect={onSelectTopic}
+          canWrite={canWrite}
+          onRename={onRenameTopic}
+          onDelete={onDeleteTopic}
         />
       ))}
     </ul>
