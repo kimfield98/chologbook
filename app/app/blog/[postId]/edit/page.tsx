@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { BlogEditor, type BlogEditorValue } from "@/components/blog/BlogEditor";
 import { useBlogPosts } from "@/hooks/useBlogPosts";
+import { isBlogDraftPublishable } from "@/lib/blog/validateBlogDraft";
 import { primaryCtaCompact } from "@/lib/ui/appButtonStyles";
 
 export default function AppBlogEditPage({
@@ -36,6 +37,7 @@ export default function AppBlogEditPage({
   const [isSaving, setIsSaving] = useState(false);
 
   const readOnly = !authSession.userId;
+  const canPublish = isBlogDraftPublishable(value);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +72,7 @@ export default function AppBlogEditPage({
           <div>
             <p className="text-sm font-semibold text-zinc-900">편집</p>
             <p className="mt-1 text-sm text-zinc-600">
-              {readOnly ? "로그인 후 편집할 수 있어요." : "수정 후 저장하면 바로 반영돼요."}
+              {readOnly ? "로그인 후 편집할 수 있어요." : "수정 내용을 게시하면 바로 반영돼요."}
             </p>
             <div className="mt-2">
               <Link
@@ -83,9 +85,9 @@ export default function AppBlogEditPage({
           </div>
           <button
             type="button"
-            disabled={readOnly || isSaving || isLoading}
+            disabled={readOnly || isSaving || isLoading || !canPublish}
             onClick={async () => {
-              if (readOnly) return;
+              if (readOnly || !canPublish) return;
               setIsSaving(true);
               try {
                 await upsert(postId, value);
@@ -95,12 +97,12 @@ export default function AppBlogEditPage({
               }
             }}
             className={
-              readOnly || isSaving || isLoading
+              readOnly || isSaving || isLoading || !canPublish
                 ? "shrink-0 rounded-2xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-400"
                 : primaryCtaCompact
             }
           >
-            {isLoading ? "불러오는 중…" : isSaving ? "저장 중…" : "저장"}
+            {isLoading ? "불러오는 중…" : isSaving ? "게시 중…" : "게시"}
           </button>
         </div>
       </div>

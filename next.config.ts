@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
       },
       { source: "/tour/blog/:postId", destination: "/p/:postId", permanent: false },
       { source: "/tour/:path*", destination: "/app/patch", permanent: false },
+      { source: "/blog", destination: "/app/blog", permanent: false },
+      { source: "/blog/:path*", destination: "/app/blog", permanent: false },
     ];
   },
 };

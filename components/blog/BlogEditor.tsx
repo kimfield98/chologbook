@@ -48,22 +48,22 @@ export function BlogEditor({
           <p className="text-sm font-semibold text-zinc-900">글</p>
         </div>
 
-        <div className="mt-4 grid gap-3">
-          <label className="grid gap-1">
+        <div className="mt-4 grid min-w-0 gap-3">
+          <label className="grid w-full min-w-0 gap-1">
             <span className="text-xs font-semibold text-zinc-600">제목</span>
             <input
               value={value.title}
               onChange={(e) => onChange({ ...value, title: e.target.value })}
               placeholder="제목"
-              className="h-11 rounded-2xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/60"
+              className="h-11 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/60"
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1">
-              <span className="text-xs font-semibold text-zinc-600">
-                카테고리
-              </span>
+          <label className="grid w-full min-w-0 gap-1">
+            <span className="text-xs font-semibold text-zinc-600">
+              카테고리
+            </span>
+            <div className="relative">
               <select
                 value={value.category}
                 onChange={(e) =>
@@ -72,7 +72,7 @@ export function BlogEditor({
                     category: e.target.value as BlogCategory,
                   })
                 }
-                className="h-11 rounded-2xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/60"
+                className="h-11 w-full max-w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pr-10 text-sm text-zinc-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/60"
               >
                 {categoryOptions.map((k) => {
                   const label =
@@ -84,28 +84,34 @@ export function BlogEditor({
                   );
                 })}
               </select>
-            </label>
+              <span
+                className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-xs text-zinc-400"
+                aria-hidden
+              >
+                ▼
+              </span>
+            </div>
+          </label>
 
-            <label className="grid gap-1">
-              <span className="text-xs font-semibold text-zinc-600">요약</span>
-              <input
-                value={value.summary}
-                onChange={(e) => onChange({ ...value, summary: e.target.value })}
-                placeholder="(선택) 목록에 보여줄 한 줄"
-                className="h-11 rounded-2xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/60"
-              />
-            </label>
-          </div>
+          <label className="grid w-full min-w-0 gap-1">
+            <span className="text-xs font-semibold text-zinc-600">요약</span>
+            <input
+              value={value.summary}
+              onChange={(e) => onChange({ ...value, summary: e.target.value })}
+              placeholder="목록에 표시할 한 줄 소개"
+              className="h-11 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/60"
+            />
+          </label>
 
-          <label className="grid gap-1">
+          <label className="grid w-full min-w-0 gap-1">
             <span className="text-xs font-semibold text-zinc-600">본문</span>
             <textarea
               value={value.contentMd}
               onChange={(e) =>
                 onChange({ ...value, contentMd: e.target.value })
               }
-              placeholder={"메모장처럼 적어주세요.\n줄바꿈은 그대로 반영돼요.\n\n**볼드** 도 가능해요."}
-              className="min-h-[220px] resize-y rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/60"
+              rows={12}
+              className="min-h-[220px] w-full resize-y rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/60"
             />
           </label>
         </div>

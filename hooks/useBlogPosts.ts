@@ -84,10 +84,15 @@ export function useBlogPosts({ dataUserId }: UseBlogPostsOptions) {
     async (postId: string, draft: BlogPostDraftInput) => {
       if (!firebaseOn || !uid) return;
 
+      const title = draft.title.trim();
+      const contentMd = draft.contentMd.trim();
+      if (!title || !contentMd) return;
+
       const payload = {
         ...draft,
-        title: draft.title.trim() || "제목 없음",
-        summary: draft.summary.trim() || makeLocalSummary(draft.contentMd),
+        title,
+        contentMd,
+        summary: draft.summary.trim() || makeLocalSummary(contentMd),
       };
 
       const prev = postsRef.current;
