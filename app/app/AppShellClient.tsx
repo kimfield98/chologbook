@@ -130,6 +130,12 @@ export default function AppShellClient({
   const onBlogRoute = Boolean(
     pathname === "/app/blog" || pathname?.startsWith("/app/blog/"),
   );
+  const preferTopicChromeCollapsed = Boolean(
+    pathname === "/app/minor" ||
+      pathname?.startsWith("/app/minor/") ||
+      pathname === "/app/major" ||
+      pathname?.startsWith("/app/major/"),
+  );
   const showTopicChrome = !onBlogRoute;
 
   const ctxValue = useMemo(
@@ -201,6 +207,7 @@ export default function AppShellClient({
                 onCreateTopic={handleCreateTopic}
                 onRenameTopic={handleRenameTopic}
                 onDeleteTopic={handleDeleteTopic}
+                preferCollapsed={preferTopicChromeCollapsed}
               />
             </div>
           ) : null}

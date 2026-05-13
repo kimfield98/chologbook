@@ -15,6 +15,7 @@ type TopicShellChromeProps = {
   onCreateTopic: (title: string) => void;
   onRenameTopic: (id: string, title: string) => void;
   onDeleteTopic: (id: string) => void;
+  preferCollapsed?: boolean;
 };
 
 export function TopicShellChrome({
@@ -27,6 +28,7 @@ export function TopicShellChrome({
   onCreateTopic,
   onRenameTopic,
   onDeleteTopic,
+  preferCollapsed = false,
 }: TopicShellChromeProps) {
   const hasTopics = topics.length > 0;
   const [topicPickerOpen, setTopicPickerOpen] = useState(true);
@@ -42,6 +44,13 @@ export function TopicShellChrome({
     setNewTopicOpen(false);
     setNewTopicName("");
   }, [hasTopics]);
+
+  useEffect(() => {
+    if (!preferCollapsed || !hasTopics) return;
+    setTopicPickerOpen(false);
+    setNewTopicOpen(false);
+    setNewTopicName("");
+  }, [preferCollapsed, hasTopics]);
 
   function handleCreateTopic() {
     if (!canWrite) return;
