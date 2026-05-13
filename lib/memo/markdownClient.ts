@@ -13,4 +13,3 @@ export async function renderMarkdownToHtml(md: string): Promise<string> {
     .process(md ?? "");
   return String(file);
 }
-

@@ -37,7 +37,7 @@ const APP_TABS = [
   { href: "/app/patch", base: "/app/patch", label: "Patch" },
   { href: "/app/minor", base: "/app/minor", label: "Minor" },
   { href: "/app/major", base: "/app/major", label: "Major" },
-  { href: "/app/blog", base: "/app/blog", label: "Blog" },
+  { href: "/app/memo", base: "/app/memo", label: "Memo" },
 ] as const;
 
 export default function AppShellClient({
@@ -50,8 +50,6 @@ export default function AppShellClient({
   const pathname = usePathname();
 
   const dataUserId = authSession.userId ?? "";
-
-  const effectiveViewMode = "mine" as const;
 
   const canWrite = Boolean(authSession.userId);
 
@@ -124,8 +122,8 @@ export default function AppShellClient({
   }, [authSession]);
 
   const hasTopics = topicsApi.topics.length > 0;
-  const onBlogRoute = Boolean(
-    pathname === "/app/blog" || pathname?.startsWith("/app/blog/"),
+  const onMemoRoute = Boolean(
+    pathname === "/app/memo" || pathname?.startsWith("/app/memo/"),
   );
   const preferTopicChromeCollapsed = Boolean(
     pathname === "/app/minor" ||
@@ -133,27 +131,23 @@ export default function AppShellClient({
       pathname === "/app/major" ||
       pathname?.startsWith("/app/major/"),
   );
-  const showTopicChrome = !onBlogRoute;
+  const showTopicChrome = !onMemoRoute;
 
   const ctxValue = useMemo(
     () =>
       ({
         authSession,
-        viewMode: effectiveViewMode,
-        setViewMode: () => {},
-        effectiveViewMode,
-        dataUserId,
         canWrite,
         logsApi,
         topicsApi,
         patch,
       }) as const,
-    [authSession, effectiveViewMode, dataUserId, canWrite, logsApi, topicsApi, patch],
+    [authSession, canWrite, logsApi, topicsApi, patch],
   );
 
   const tabActive = (base: string) => {
-    if (base === "/app/blog") {
-      return pathname === "/app/blog" || Boolean(pathname?.startsWith("/app/blog/"));
+    if (base === "/app/memo") {
+      return pathname === "/app/memo" || Boolean(pathname?.startsWith("/app/memo/"));
     }
     return pathname === base || Boolean(pathname?.startsWith(`${base}/`));
   };

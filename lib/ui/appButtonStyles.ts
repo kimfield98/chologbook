@@ -1,12 +1,12 @@
 /**
- * 앱 CTA — 블로그 저장·Minor/Major 등 기본은 에메랄드(`primaryCta*`).
+ * 앱 CTA — 메모 저장·Minor/Major 등 기본은 에메랄드(`primaryCta*`).
  * Patch처럼 행동 유도가 중요한 곳도 동일 톤으로 두되, import 이름으로 구분 가능.
  */
 
 const disabledPrimaryCta =
   "disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none";
 
-/** 전폭 주요 CTA — 블로그 compact와 동일 에메랄드 */
+/** 전폭 주요 CTA — 메모 compact와 동일 에메랄드 */
 export const primaryCtaFullWidth =
   "flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-600 bg-emerald-600 px-4 py-4 text-center text-base font-semibold leading-snug text-white shadow-sm transition enabled:hover:border-emerald-700 enabled:hover:bg-emerald-700 enabled:active:scale-[0.99] " +
   disabledPrimaryCta;
@@ -22,7 +22,7 @@ export const patchIdleCtaFullWidth =
 export const primaryCtaLanding =
   "w-full rounded-2xl border border-emerald-600 bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-700 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-200 disabled:text-zinc-500";
 
-/** 블로그 저장 등 compact */
+/** 메모 저장 등 compact */
 export const primaryCtaCompact =
   "shrink-0 rounded-2xl border border-emerald-600 bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-700 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-200 disabled:text-zinc-500";
 

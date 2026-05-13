@@ -1,8 +1,8 @@
-type BlogDraftLike = {
+type MemoDraftLike = {
   title: string;
   contentMd: string;
 };
 
-export function isBlogDraftPublishable(draft: BlogDraftLike): boolean {
+export function isMemoDraftSavable(draft: MemoDraftLike): boolean {
   return Boolean(draft.title.trim() && draft.contentMd.trim());
 }

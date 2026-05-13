@@ -1,27 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { BlogCategory } from "@/lib/blog/types";
+import type { MemoTag } from "@/lib/memo/types";
 import {
-  deleteBlogPostFromFirestore,
-  getBlogPostFromFirestore,
-  listBlogPostsFromFirestore,
-  upsertBlogPostToFirestore,
-  type FirestoreBlogPost,
-} from "@/lib/blog/firestoreBlogPosts";
+  deleteMemoFromFirestore,
+  getMemoFromFirestore,
+  listMemosFromFirestore,
+  upsertMemoToFirestore,
+  type FirestoreMemo,
+} from "@/lib/memo/firestoreMemos";
+import { normalizeMemoTag } from "@/lib/memo/memoTag";
 import { initFirebase, isFirebaseConfigured } from "@/lib/firebase";
 
-type UseBlogPostsOptions = {
-  /** 모드에 따른 데이터 주체(uid) */
+type UseMemosOptions = {
   dataUserId: string;
 };
 
-export type BlogPostDraftInput = {
+export type MemoDraftInput = {
   title: string;
   summary: string;
-  category: BlogCategory;
+  tag: MemoTag;
   contentMd: string;
-  coverImageUrl?: string;
 };
 
 function makeLocalSummary(md: string): string {
@@ -35,23 +34,23 @@ function makeLocalSummary(md: string): string {
   return s.slice(0, 80);
 }
 
-export function useBlogPosts({ dataUserId }: UseBlogPostsOptions) {
+export function useMemos({ dataUserId }: UseMemosOptions) {
   const firebaseOn = isFirebaseConfigured();
   const uid = dataUserId.trim();
 
-  const [posts, setPosts] = useState<FirestoreBlogPost[]>([]);
-  const postsRef = useRef(posts);
+  const [memos, setMemos] = useState<FirestoreMemo[]>([]);
+  const memosRef = useRef(memos);
   useEffect(() => {
-    postsRef.current = posts;
-  }, [posts]);
+    memosRef.current = memos;
+  }, [memos]);
 
   const [isLoading, setIsLoading] = useState(() => firebaseOn);
 
   useEffect(() => {
     if (!firebaseOn || !uid) {
       queueMicrotask(() => {
-        setPosts([]);
-        postsRef.current = [];
+        setMemos([]);
+        memosRef.current = [];
         setIsLoading(false);
       });
       return;
@@ -60,10 +59,10 @@ export function useBlogPosts({ dataUserId }: UseBlogPostsOptions) {
     initFirebase();
     setIsLoading(true);
     let cancelled = false;
-    void listBlogPostsFromFirestore(uid).then((rows) => {
+    void listMemosFromFirestore(uid).then((rows) => {
       if (cancelled) return;
-      setPosts(rows);
-      postsRef.current = rows;
+      setMemos(rows);
+      memosRef.current = rows;
       setIsLoading(false);
     });
     return () => {
@@ -72,16 +71,16 @@ export function useBlogPosts({ dataUserId }: UseBlogPostsOptions) {
   }, [firebaseOn, uid]);
 
   const getById = useCallback(
-    async (postId: string) => {
+    async (memoId: string) => {
       if (!firebaseOn || !uid) return null;
       initFirebase();
-      return await getBlogPostFromFirestore(uid, postId);
+      return await getMemoFromFirestore(uid, memoId);
     },
     [firebaseOn, uid],
   );
 
   const upsert = useCallback(
-    async (postId: string, draft: BlogPostDraftInput) => {
+    async (memoId: string, draft: MemoDraftInput) => {
       if (!firebaseOn || !uid) return;
 
       const title = draft.title.trim();
@@ -93,70 +92,73 @@ export function useBlogPosts({ dataUserId }: UseBlogPostsOptions) {
         title,
         contentMd,
         summary: draft.summary.trim() || makeLocalSummary(contentMd),
+        tag: normalizeMemoTag(draft.tag),
       };
 
-      const prev = postsRef.current;
-      const optimistic: FirestoreBlogPost = {
-        id: postId,
+      const prev = memosRef.current;
+      const optimistic: FirestoreMemo = {
+        id: memoId,
         uid,
         title: payload.title,
         summary: payload.summary,
-        category: payload.category,
+        tag: payload.tag,
         contentMd: payload.contentMd,
-        coverImageUrl: payload.coverImageUrl,
       };
-      setPosts(() => {
-        const rest = prev.filter((p) => p.id !== postId);
+      setMemos(() => {
+        const rest = prev.filter((memo) => memo.id !== memoId);
         return [optimistic, ...rest];
       });
-      postsRef.current = [optimistic, ...prev.filter((p) => p.id !== postId)];
+      memosRef.current = [optimistic, ...prev.filter((memo) => memo.id !== memoId)];
 
       initFirebase();
-      await upsertBlogPostToFirestore({
+      await upsertMemoToFirestore({
         uid,
-        postId,
+        memoId,
         title: payload.title,
         summary: payload.summary,
-        category: payload.category,
+        tag: payload.tag,
         contentMd: payload.contentMd,
-        coverImageUrl: payload.coverImageUrl,
       });
     },
     [firebaseOn, uid],
   );
 
   const remove = useCallback(
-    async (postId: string) => {
+    async (memoId: string) => {
       if (!firebaseOn || !uid) return;
 
-      const prev = postsRef.current;
-      setPosts(prev.filter((p) => p.id !== postId));
-      postsRef.current = prev.filter((p) => p.id !== postId);
+      const prev = memosRef.current;
+      setMemos(prev.filter((memo) => memo.id !== memoId));
+      memosRef.current = prev.filter((memo) => memo.id !== memoId);
 
       initFirebase();
-      await deleteBlogPostFromFirestore({ uid, postId });
+      await deleteMemoFromFirestore({ uid, memoId });
     },
     [firebaseOn, uid],
   );
 
-  const categories = useMemo(() => {
-    const set = new Set<BlogCategory>();
-    for (const p of posts) set.add(p.category);
-    return Array.from(set);
-  }, [posts]);
+  const tags = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const memo of memos) {
+      const tag = normalizeMemoTag(memo.tag);
+      if (!tag) continue;
+      const key = tag.toLocaleLowerCase("ko-KR");
+      if (!map.has(key)) map.set(key, tag);
+    }
+    return Array.from(map.values()).sort((a, b) => a.localeCompare(b, "ko-KR"));
+  }, [memos]);
 
   return {
     firebaseOn,
     uid,
-    posts,
-    setPosts,
+    memos,
+    setMemos,
     isLoading,
-    categories,
+    tags,
     getById,
     upsert,
     remove,
   };
 }
 
-export type BlogPostsApi = ReturnType<typeof useBlogPosts>;
-
+export type MemosApi = ReturnType<typeof useMemos>;

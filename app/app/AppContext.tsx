@@ -6,14 +6,8 @@ import { useLogs } from "@/hooks/useLogs";
 import { usePatch } from "@/hooks/usePatch";
 import type { TopicsApi } from "@/hooks/useTopics";
 
-type ViewMode = "public" | "mine";
-
 export type AppContextValue = {
   authSession: ReturnType<typeof useAuth>;
-  viewMode: ViewMode;
-  setViewMode: (m: ViewMode) => void;
-  effectiveViewMode: ViewMode;
-  dataUserId: string;
   canWrite: boolean;
   logsApi: ReturnType<typeof useLogs>;
   topicsApi: TopicsApi;
@@ -37,4 +31,3 @@ export function useAppContext(): AppContextValue {
   if (!v) throw new Error("useAppContext must be used within AppProvider");
   return v;
 }
-

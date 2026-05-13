@@ -4,34 +4,30 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { BLOG_CATEGORIES } from "@/lib/blog/constants";
-import { renderMarkdownToHtml } from "@/lib/blog/markdownClient";
-import { useBlogPosts } from "@/hooks/useBlogPosts";
+import { useMemos } from "@/hooks/useMemos";
+import { displayMemoTag } from "@/lib/memo/memoTag";
+import { renderMarkdownToHtml } from "@/lib/memo/markdownClient";
 
-type BlogPostReaderProps = {
-  postId: string;
-  /** 목록으로 돌아갈 때 사용하는 경로 */
+type MemoReaderProps = {
+  memoId: string;
   listHref?: string;
 };
 
-/**
- * 앱 셸 밖에서 쓰는 블로그 글 읽기 화면(전체 뷰 + 목록/뒤로).
- */
-export function BlogPostReader({
-  postId,
-  listHref = "/app/blog",
-}: BlogPostReaderProps) {
+export function MemoReader({
+  memoId,
+  listHref = "/app/memo",
+}: MemoReaderProps) {
   const router = useRouter();
   const authSession = useAuth();
   const uid = authSession.userId ?? "";
-  const { posts, getById, remove } = useBlogPosts({ dataUserId: uid });
+  const { memos, getById, remove } = useMemos({ dataUserId: uid });
 
   const cached = useMemo(
-    () => posts.find((p) => p.id === postId) ?? null,
-    [posts, postId],
+    () => memos.find((memo) => memo.id === memoId) ?? null,
+    [memos, memoId],
   );
 
-  const [post, setPost] = useState(cached);
+  const [memo, setMemo] = useState(cached);
   const [html, setHtml] = useState("");
   const [isLoading, setIsLoading] = useState(!cached);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -46,20 +42,20 @@ export function BlogPostReader({
   }, [authSession.isLoading, authSession.userId, router]);
 
   const readOnly =
-    !authSession.userId || !post || post.uid !== authSession.userId;
+    !authSession.userId || !memo || memo.uid !== authSession.userId;
 
   useEffect(() => {
     if (!authSession.userId) return;
     let cancelled = false;
     setIsLoading(!cached);
     void (async () => {
-      const row = cached ?? (await getById(postId));
+      const row = cached ?? (await getById(memoId));
       if (cancelled) return;
-      setPost(row);
+      setMemo(row);
       setIsLoading(false);
       if (row) {
-        const h = await renderMarkdownToHtml(row.contentMd);
-        if (!cancelled) setHtml(h);
+        const rendered = await renderMarkdownToHtml(row.contentMd);
+        if (!cancelled) setHtml(rendered);
       } else {
         setHtml("");
       }
@@ -67,7 +63,7 @@ export function BlogPostReader({
     return () => {
       cancelled = true;
     };
-  }, [authSession.userId, cached, getById, postId]);
+  }, [authSession.userId, cached, getById, memoId]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -86,11 +82,7 @@ export function BlogPostReader({
     };
   }, [menuOpen]);
 
-  const catLabel =
-    post?.category
-      ? BLOG_CATEGORIES.find((c) => c.key === post.category)?.label ??
-        post.category
-      : "";
+  const tagLabel = displayMemoTag(memo?.tag);
 
   if (authSession.isLoading || !authSession.userId) {
     return (
@@ -128,26 +120,28 @@ export function BlogPostReader({
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xl font-semibold tracking-tight text-zinc-900">
-                {isLoading ? "불러오는 중…" : post?.title ?? "글을 찾을 수 없어요."}
+                {isLoading ? "불러오는 중…" : memo?.title ?? "메모를 찾을 수 없어요."}
               </p>
-              {post ? (
+              {memo ? (
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                  <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                    {catLabel}
-                  </span>
+                  {tagLabel ? (
+                    <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                      {tagLabel}
+                    </span>
+                  ) : null}
                 </div>
               ) : null}
             </div>
 
-            {!readOnly && post ? (
+            {!readOnly && memo ? (
               <div className="relative shrink-0" ref={menuWrapRef}>
                 <button
                   type="button"
                   aria-expanded={menuOpen}
                   aria-haspopup="menu"
-                  aria-label="글 메뉴"
+                  aria-label="메모 메뉴"
                   disabled={isDeleting}
-                  onClick={() => setMenuOpen((o) => !o)}
+                  onClick={() => setMenuOpen((open) => !open)}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-xl leading-none text-zinc-500 transition hover:bg-zinc-100 disabled:opacity-40"
                 >
                   <span aria-hidden>⋮</span>
@@ -159,7 +153,7 @@ export function BlogPostReader({
                   >
                     <Link
                       role="menuitem"
-                      href={`/app/blog/${postId}/edit`}
+                      href={`/app/memo/${memoId}/edit`}
                       onClick={() => setMenuOpen(false)}
                       className="block px-4 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
                     >
@@ -173,11 +167,11 @@ export function BlogPostReader({
                       onClick={async () => {
                         if (isDeleting) return;
                         setMenuOpen(false);
-                        const ok = window.confirm("이 글을 진짜 삭제할까요?");
+                        const ok = window.confirm("이 메모를 삭제할까요?");
                         if (!ok) return;
                         setIsDeleting(true);
                         try {
-                          await remove(postId);
+                          await remove(memoId);
                           router.replace(listHref);
                         } finally {
                           setIsDeleting(false);
@@ -193,14 +187,14 @@ export function BlogPostReader({
             ) : null}
           </div>
 
-          {post?.summary ? (
-            <p className="mt-4 text-sm leading-relaxed text-zinc-600">{post.summary}</p>
+          {memo?.summary ? (
+            <p className="mt-4 text-sm leading-relaxed text-zinc-600">{memo.summary}</p>
           ) : null}
         </div>
 
         <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          {!post ? (
-            <p className="text-sm text-zinc-500">글이 없거나 권한이 없어요.</p>
+          {!memo ? (
+            <p className="text-sm text-zinc-500">메모가 없거나 권한이 없어요.</p>
           ) : (
             <article
               className="prose prose-zinc max-w-none prose-p:leading-relaxed prose-a:text-emerald-700 prose-a:no-underline hover:prose-a:underline"
