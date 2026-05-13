@@ -14,6 +14,10 @@ export const primaryCtaFullWidth =
 /** Patch 탭 등 — `primaryCtaFullWidth`와 동일(초록 유지) */
 export const patchPrimaryCtaFullWidth = primaryCtaFullWidth;
 
+/** Patch 대기·비활성 — 회색 전폭 */
+export const patchIdleCtaFullWidth =
+  "flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-200 px-4 py-4 text-center text-base font-semibold leading-snug text-zinc-500 shadow-none";
+
 /** 랜딩 등 전체 너비·sm */
 export const primaryCtaLanding =
   "w-full rounded-2xl border border-emerald-600 bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-700 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-200 disabled:text-zinc-500";

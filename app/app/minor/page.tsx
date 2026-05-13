@@ -11,12 +11,22 @@ import {
 } from "@/lib/ui/appButtonStyles";
 
 export default function MinorTabPage() {
-  const { patch, canWrite } = useAppContext();
+  const { patch, canWrite, authSession } = useAppContext();
 
   const minorLogs = useMemo(
     () => patch.sortedLogs.filter((l) => getLogType(l) === "minor"),
     [patch.sortedLogs],
   );
+
+  const minorCtaDisabled =
+    authSession.isGooglePopupPending ||
+    (canWrite && patch.minorOpenDisabled);
+
+  const minorCtaLabel = !canWrite
+    ? authSession.isGooglePopupPending
+      ? "로그인 연결 중…"
+      : "로그인하고 기록하기"
+    : "오늘 한 줄 남기기";
 
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-0">
@@ -33,11 +43,17 @@ export default function MinorTabPage() {
           <div className="space-y-2">
             <button
               type="button"
-              onClick={patch.handleOpenMinorInput}
-              disabled={patch.minorOpenDisabled || !canWrite}
+              onClick={() => {
+                if (!canWrite) {
+                  void authSession.signInWithGoogle();
+                  return;
+                }
+                patch.handleOpenMinorInput();
+              }}
+              disabled={minorCtaDisabled}
               className={primaryCtaFullWidth}
             >
-              오늘 한 줄 남기기
+              {minorCtaLabel}
             </button>
             {patch.alreadyMinoredToday ? (
               <p className="text-center text-xs text-zinc-500">

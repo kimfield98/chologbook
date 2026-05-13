@@ -12,23 +12,28 @@ import {
 } from "@/lib/ui/appButtonStyles";
 
 export default function MajorTabPage() {
-  const { patch, canWrite } = useAppContext();
+  const { patch, canWrite, authSession } = useAppContext();
 
   const majorLogs = useMemo(
     () => patch.sortedLogs.filter((l) => getLogType(l) === "major"),
     [patch.sortedLogs],
   );
 
-  const majorCtaLabel = formatMajorButtonLabel({
-    todayKey: patch.todayKey,
-    canWrite,
-    canStartMajor: patch.canStartMajor,
-    minorCountInSegment: patch.minorCount,
-    hasSelectedTopic: Boolean(patch.selectedTopic),
-  });
+  const majorCtaLabel = !canWrite
+    ? authSession.isGooglePopupPending
+      ? "로그인 연결 중…"
+      : "로그인하고 기록하기"
+    : formatMajorButtonLabel({
+        todayKey: patch.todayKey,
+        canWrite,
+        canStartMajor: patch.canStartMajor,
+        minorCountInSegment: patch.minorCount,
+        hasSelectedTopic: Boolean(patch.selectedTopic),
+      });
 
   const majorCtaDisabled =
-    patch.todayKey === "" || !canWrite || !patch.canStartMajor;
+    authSession.isGooglePopupPending ||
+    (canWrite && (patch.todayKey === "" || !patch.canStartMajor));
 
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-0">
@@ -44,7 +49,13 @@ export default function MajorTabPage() {
         {!patch.majorInputMode ? (
           <button
             type="button"
-            onClick={patch.handleOpenMajorComposer}
+            onClick={() => {
+              if (!canWrite) {
+                void authSession.signInWithGoogle();
+                return;
+              }
+              patch.handleOpenMajorComposer();
+            }}
             disabled={majorCtaDisabled}
             className={primaryCtaFullWidth}
           >

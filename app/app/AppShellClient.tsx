@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { TopicEmptyState, TopicShellChrome } from "@/components/chologbook/TopicShellChrome";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogs } from "@/hooks/useLogs";
@@ -48,13 +48,6 @@ export default function AppShellClient({
   const authSession = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-
-  useEffect(() => {
-    if (authSession.isLoading) return;
-    if (authSession.userId) return;
-    if (!pathname?.startsWith("/app")) return;
-    router.replace("/");
-  }, [authSession.isLoading, authSession.userId, pathname, router]);
 
   const dataUserId = authSession.userId ?? "";
 
@@ -126,6 +119,10 @@ export default function AppShellClient({
     [canWrite, topicsApi],
   );
 
+  const handleRequestSignIn = useCallback(() => {
+    void authSession.signInWithGoogle();
+  }, [authSession]);
+
   const hasTopics = topicsApi.topics.length > 0;
   const onBlogRoute = Boolean(
     pathname === "/app/blog" || pathname?.startsWith("/app/blog/"),
@@ -161,13 +158,10 @@ export default function AppShellClient({
     return pathname === base || Boolean(pathname?.startsWith(`${base}/`));
   };
 
-  if (authSession.isLoading || !authSession.userId) {
-    const label = authSession.isLoading
-      ? "불러오는 중…"
-      : "로그인이 필요해요. 이동 중…";
+  if (authSession.isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-zinc-50 text-sm text-zinc-500">
-        {label}
+        불러오는 중…
       </div>
     );
   }
@@ -186,9 +180,22 @@ export default function AppShellClient({
                 CHOLOGBOOK
               </button>
               {showAccountBar ? (
-                <p className="max-w-full truncate px-2 pt-0.5 text-center text-xs font-medium text-zinc-600">
-                  {authSession.user?.email ?? authSession.userId}
-                </p>
+                authSession.user ? (
+                  <p className="max-w-full truncate px-2 pt-0.5 text-center text-xs font-medium text-zinc-600">
+                    {authSession.user.email ?? authSession.userId}
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void authSession.signInWithGoogle()}
+                    disabled={authSession.isGooglePopupPending}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {authSession.isGooglePopupPending
+                      ? "Google 연결 중…"
+                      : "Google로 로그인"}
+                  </button>
+                )
               ) : null}
             </div>
           </div>
@@ -203,10 +210,12 @@ export default function AppShellClient({
                 focusVisualId={focusVisualId}
                 selectedTopicTitle={selectedTopicTitle}
                 canWrite={canWrite}
+                isSignInPending={authSession.isGooglePopupPending}
                 onSelectTopic={handleHeaderSelectTopic}
                 onCreateTopic={handleCreateTopic}
                 onRenameTopic={handleRenameTopic}
                 onDeleteTopic={handleDeleteTopic}
+                onRequestSignIn={handleRequestSignIn}
                 preferCollapsed={preferTopicChromeCollapsed}
               />
             </div>
@@ -215,7 +224,7 @@ export default function AppShellClient({
           <div className="mx-auto w-full max-w-md min-h-0 flex-1 overflow-y-auto">
             <div className="flex min-h-full min-h-0 flex-1 flex-col">
               {showTopicChrome && !hasTopics ? (
-                <TopicEmptyState canWrite={canWrite} onCreateTopic={handleCreateTopic} />
+                <TopicEmptyState />
               ) : (
                 children
               )}

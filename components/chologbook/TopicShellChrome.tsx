@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { TopicCreateForm } from "@/components/chologbook/TopicCreateForm";
 import { TopicList } from "@/components/chologbook/TopicList";
+import { useAppContext } from "@/app/app/AppContext";
+import { patchIdleCtaFullWidth } from "@/lib/ui/appButtonStyles";
 import type { Log, Topic } from "@/lib/chologbook/types";
+
+const topicAddButtonClass =
+  "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 px-4 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50";
 
 type TopicShellChromeProps = {
   topics: Topic[];
@@ -11,10 +16,12 @@ type TopicShellChromeProps = {
   focusVisualId: string | undefined;
   selectedTopicTitle: string;
   canWrite: boolean;
+  isSignInPending?: boolean;
   onSelectTopic: (id: string) => void;
   onCreateTopic: (title: string) => void;
   onRenameTopic: (id: string, title: string) => void;
   onDeleteTopic: (id: string) => void;
+  onRequestSignIn: () => void;
   preferCollapsed?: boolean;
 };
 
@@ -28,6 +35,8 @@ export function TopicShellChrome({
   onCreateTopic,
   onRenameTopic,
   onDeleteTopic,
+  onRequestSignIn,
+  isSignInPending = false,
   preferCollapsed = false,
 }: TopicShellChromeProps) {
   const hasTopics = topics.length > 0;
@@ -62,31 +71,45 @@ export function TopicShellChrome({
   }
 
   function handleOpenNewTopicPanel() {
-    if (!canWrite) return;
+    if (!canWrite) {
+      onRequestSignIn();
+      return;
+    }
     setNewTopicName("");
     setNewTopicOpen(true);
     setTopicPickerOpen(true);
   }
 
+  const addTopicButtonLabel = !canWrite
+    ? isSignInPending
+      ? "로그인 연결 중…"
+      : "로그인하고 토픽 생성하기"
+    : "+ Topic 추가";
+
   if (!hasTopics) {
     return (
       <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm ring-1 ring-zinc-100">
-        <p className="text-sm font-semibold text-zinc-900">첫 Topic을 만들어주세요</p>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-          반복하고 싶은 습관이나 기록을 하나 만들면 Patch를 바로 남길 수 있어요.
-        </p>
-        {canWrite ? (
+        <p className="text-sm font-semibold text-zinc-900">Topic을 만들어보세요</p>
+        <p className="mt-1 text-xs leading-relaxed text-zinc-500">반복하고 싶은 행동의 묶음을 만들어보세요.</p>
+        {canWrite && newTopicOpen ? (
           <div className="mt-3">
             <TopicCreateForm
               value={newTopicName}
               onChange={setNewTopicName}
               onSubmit={handleCreateTopic}
               autoFocus
-              submitLabel="만들기"
+              submitLabel="만들고 시작하기"
             />
           </div>
         ) : (
-          <p className="mt-3 text-sm text-zinc-600">기록은 로그인 후에 가능해요.</p>
+          <button
+            type="button"
+            onClick={handleOpenNewTopicPanel}
+            disabled={isSignInPending}
+            className={`mt-3 ${topicAddButtonClass}`}
+          >
+            {addTopicButtonLabel}
+          </button>
         )}
       </div>
     );
@@ -133,13 +156,14 @@ export function TopicShellChrome({
               onRenameTopic={onRenameTopic}
               onDeleteTopic={onDeleteTopic}
             />
-            {canWrite && !newTopicOpen ? (
+            {!newTopicOpen ? (
               <button
                 type="button"
                 onClick={handleOpenNewTopicPanel}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 px-4 py-3 text-sm font-medium text-emerald-800 transition hover:bg-emerald-50"
+                disabled={isSignInPending}
+                className={topicAddButtonClass}
               >
-                + Topic 추가
+                {addTopicButtonLabel}
               </button>
             ) : null}
             {canWrite && newTopicOpen ? (
@@ -161,49 +185,43 @@ export function TopicShellChrome({
   );
 }
 
-export function TopicEmptyState({
-  canWrite,
-  onCreateTopic,
-}: {
-  canWrite: boolean;
-  onCreateTopic: (title: string) => void;
-}) {
-  const [newTopicName, setNewTopicName] = useState("");
-
-  function handleCreateTopic() {
-    if (!canWrite) return;
-    const title = newTopicName.trim();
-    if (!title) return;
-    onCreateTopic(title);
-    setNewTopicName("");
-  }
+export function TopicEmptyState() {
+  const { patch, canWrite } = useAppContext();
 
   return (
-    <section className="flex flex-1 flex-col justify-center gap-4 py-10">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-widest text-emerald-600/90">
-          시작하기
-        </p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-900">
-          첫 Topic을 만들어보세요
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-          Topic은 반복하고 싶은 행동이나 기록의 묶음이에요. 하나만 만들어도 Patch부터
-          시작할 수 있어요.
-        </p>
-        {canWrite ? (
-          <div className="mt-5 text-left">
-            <TopicCreateForm
-              value={newTopicName}
-              onChange={setNewTopicName}
-              onSubmit={handleCreateTopic}
-              autoFocus
-              submitLabel="만들고 시작하기"
-            />
-          </div>
-        ) : (
-          <p className="mt-5 text-sm text-zinc-600">기록은 로그인 후에 가능해요.</p>
-        )}
+    <section className="flex flex-1 flex-col justify-center gap-5 py-6">
+      <div className="flex min-h-0 flex-1 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="w-full space-y-3">
+          <p className="text-center text-xs font-semibold text-zinc-500">Patch 기록하기</p>
+          {patch.latestNextPatchDirection ? (
+            <div className="flex items-start justify-center gap-2 text-sm text-emerald-800">
+              <div className="min-w-0">
+                <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-emerald-700/80">
+                  다음 흐름
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-center font-bold leading-relaxed text-emerald-900/90">
+                  {patch.latestNextPatchDirection}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-xs text-zinc-400">
+              {canWrite
+                ? "Topic을 만든 뒤 오늘의 Patch를 남겨 보세요."
+                : "Topic을 만든 뒤, 하루에 한 번 실행 여부를 기록해요."}
+            </p>
+          )}
+
+          <button type="button" disabled className={patchIdleCtaFullWidth}>
+            오늘도 했어요
+          </button>
+
+          {patch.feedbackMessage ? (
+            <p className="text-center text-sm font-medium text-emerald-700">
+              {patch.feedbackMessage}
+            </p>
+          ) : null}
+        </div>
       </div>
     </section>
   );

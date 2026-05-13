@@ -1,11 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
 import { primaryCtaLanding } from "@/lib/ui/appButtonStyles";
 
 export default function LandingClient() {
-  const authSession = useAuth();
   const router = useRouter();
 
   return (
@@ -75,26 +73,13 @@ export default function LandingClient() {
         </section>
 
         <section className="mx-auto w-full max-w-md px-4 py-10">
-          {authSession.user ? (
-            <button
-              type="button"
-              onClick={() => router.push("/app/patch")}
-              className={primaryCtaLanding}
-            >
-              나의 초록북 가기
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void authSession.signInWithGoogle()}
-              disabled={authSession.isGooglePopupPending}
-              className="w-full rounded-2xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-zinc-200/80 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {authSession.isGooglePopupPending
-                ? "연결 중…"
-                : "로그인하고 시작하기"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => router.push("/app/patch")}
+            className={primaryCtaLanding}
+          >
+            나의 초록북 이동하기
+          </button>
         </section>
       </div>
     </main>
